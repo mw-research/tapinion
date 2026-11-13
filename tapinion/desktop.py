@@ -66,6 +66,24 @@ def already_running(port: int) -> bool:
         return False
 
 
+MAX_LOG_BYTES = 1024 * 1024
+
+
+def ensure_streams(folder: Path) -> None:
+    """A windowed app (double-click, installer) has no console, so sys.stdout and sys.stderr
+    are None – anything that prints or logs would crash. Send both to a log file instead."""
+    if sys.stdout is not None and sys.stderr is not None:
+        return
+    path = folder / "tapinion.log"
+    if path.is_file() and path.stat().st_size > MAX_LOG_BYTES:
+        path.unlink()
+    log = open(path, "a", encoding="utf-8", buffering=1)  # noqa: SIM115 - lives as long as the app
+    if sys.stdout is None:
+        sys.stdout = log
+    if sys.stderr is None:
+        sys.stderr = log
+
+
 def main():
     preferred = int(os.environ.get("TAPINION_PORT", DEFAULT_PORT))
     if already_running(preferred):
@@ -74,17 +92,23 @@ def main():
             webbrowser.open(f"http://localhost:{preferred}")
         return
     folder = data_dir()
+    ensure_streams(folder)
     os.environ.setdefault("DB_PATH", str(folder / "tapinion.sqlite3"))
     os.environ.setdefault("SECRET_KEY", secret_key(folder))
     os.environ.setdefault("COOKIE_SECURE", "0")
     port = free_port(preferred)
+
+    import logging
 
     import uvicorn
 
     from .main import app
     from .netinfo import lan_ip
 
-    config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="warning", proxy_headers=False)
+    # Plain logging to stderr (console or log file); uvicorn's own setup expects a terminal.
+    logging.basicConfig(level=logging.WARNING, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    config = uvicorn.Config(app, host="0.0.0.0", port=port, log_config=None, log_level="warning",
+                            proxy_headers=False)
     server = uvicorn.Server(config)
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()
