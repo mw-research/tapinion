@@ -17,6 +17,7 @@ First public version.
 - Setup wizard: language, administrator account, look, first event, connect the tablet.
 - Installers: Windows setup (shortcuts, optional autostart, firewall rule), macOS disk image, Linux AppImage.
 - Desktop app with QR codes for tablets in the same network; a second start opens the running instance.
-- Android kiosk app: finds Tapinion in the Wi-Fi by itself (DNS-SD), QR code as main action, full screen, screen on, optional app pinning.
+- Android kiosk app: finds Tapinion in the Wi-Fi by itself (DNS-SD), QR code as main action, full screen, screen on, optional app pinning;
+  keeps the running kiosk on the device and opens it without the computer, also after a restart.
 - Kiosk on the base computer: full-screen browser window from the desktop app; full-screen button in the kiosk.
 - Docker image and Kubernetes manifest.

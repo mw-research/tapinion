@@ -48,7 +48,9 @@ unless you choose to delete it.
 - **Android**: install `tapinion-android-….apk` from the releases (allow "install unknown apps"
   once). The app finds the computer in the Wi-Fi by itself – tap it, or tap *Scan QR code* –
   then enter the event's PIN. The app runs full screen, keeps the screen on
-  and pins itself while the kiosk runs.
+  and pins itself while the kiosk runs. It also keeps the running kiosk on the device: a tablet
+  prepared in the office keeps collecting at the venue without the computer, even after a
+  restart, and delivers the ratings once it is back in the computer's network.
 - **The computer itself**: *Kiosk on this computer* in the Tapinion window opens the rating screen
   full screen in its own browser window (Edge on Windows; Chrome or Edge on macOS/Linux), while you
   stay logged in in your normal browser.

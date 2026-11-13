@@ -19,6 +19,7 @@ import android.view.inputmethod.EditorInfo;
 import android.webkit.CookieManager;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -51,9 +52,11 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREFS = "tapinion";
     private static final String KEY_URL = "url";
     private static final String KEY_PIN_APP = "pin_app";
+    private static final String KEY_LAST_KIOSK = "last_kiosk";  // running kiosk, opened again after a restart
     private static final String SERVICE_TYPE = "_tapinion._tcp";
 
     private SharedPreferences prefs;
+    private KioskCache cache;
     private WebView web;
     private String origin;
     private boolean pinned;
@@ -78,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        cache = new KioskCache(this);
         nsd = (NsdManager) getSystemService(Context.NSD_SERVICE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -87,8 +91,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         String url = prefs.getString(KEY_URL, null);
+        String kiosk = prefs.getString(KEY_LAST_KIOSK, null);
         if (url == null) {
             showSetup(null);
+        } else if (kiosk != null && cache.has(Uri.parse(kiosk))) {
+            showWeb(kiosk);  // continue the kiosk – from the computer, or from the device if it is out of reach
         } else {
             showWeb(url);
         }
@@ -167,7 +174,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         stopDiscovery();
-        prefs.edit().putString(KEY_URL, raw).apply();
+        prefs.edit().putString(KEY_URL, raw).remove(KEY_LAST_KIOSK).apply();
+        cache.clear();
         showWeb(raw);
     }
 
@@ -286,6 +294,16 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                Uri u = request.getUrl();
+                String o = u.getScheme() + "://" + u.getAuthority();
+                if ("GET".equals(request.getMethod()) && o.equals(origin) && KioskCache.cacheable(u)) {
+                    return cache.handle(request);
+                }
+                return null;
+            }
+
+            @Override
             public void onPageStarted(WebView view, String page, Bitmap favicon) {
                 updatePinning(page);
             }
@@ -294,7 +312,14 @@ public class MainActivity extends AppCompatActivity {
             public void onPageFinished(WebView view, String page) {
                 // On the start/login page (e.g. after leaving the kiosk with the PIN) "back" must not
                 // lead into the kiosk again: forget the history, so back offers to quit the app.
-                if (isStartPage(page)) view.clearHistory();
+                if (isStartPage(page)) {
+                    view.clearHistory();
+                    // the kiosk was left: nothing to continue after a restart
+                    prefs.edit().remove(KEY_LAST_KIOSK).apply();
+                    cache.clear();
+                } else if (isKioskPage(page) && cache.has(Uri.parse(page))) {
+                    prefs.edit().putString(KEY_LAST_KIOSK, page).apply();
+                }
             }
 
             @Override
@@ -364,6 +389,12 @@ public class MainActivity extends AppCompatActivity {
                 .setNeutralButton(R.string.change_server, (d, w) -> showSetup(null))
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
+    }
+
+    private static boolean isKioskPage(String page) {
+        if (page == null) return false;
+        String path = Uri.parse(page).getPath();
+        return path != null && path.startsWith("/k/") && path.split("/").length == 3;
     }
 
     private static boolean isStartPage(String page) {
