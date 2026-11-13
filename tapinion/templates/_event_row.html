@@ -16,6 +16,7 @@
     <a class="btn" href="/events/{{ e.id }}/kiosk" onclick="return confirm({{ t('events.start_confirm') | tojson | forceescape }})">{{ t('events.start') }}</a>
     <button class="btn ghost" hx-get="/events/{{ e.id }}/qr" hx-target="#modal">{{ t('events.qr') }}</button>
     {% endif %}
+    <button class="btn ghost" hx-get="/events/{{ e.id }}/devices" hx-target="#modal">{{ t('devices.button', n=e.n_devices) }}</button>
     {% if can('events.edit') %}
     <button class="btn ghost" hx-get="/events/{{ e.id }}/edit" hx-target="#event-{{ e.id }}" hx-swap="outerHTML">{{ t('common.edit') }}</button>
     <button class="btn ghost" hx-post="/events/{{ e.id }}/relink" hx-target="#event-{{ e.id }}" hx-swap="outerHTML"

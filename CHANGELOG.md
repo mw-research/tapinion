@@ -7,6 +7,9 @@ First public version.
 - Kiosk with smileys or 0–10 scale, German and English, question per language.
 - PIN to open and leave a kiosk; open kiosks listed on the login page; a kiosk device is never logged in.
 - Votes are buffered on the device when the network drops and sent later with their time.
+- Kiosk devices: own key per device, optional name, any number per event; resume after restart without PIN;
+  device list with last seen, ratings per device, switch off; ratings per device in the results.
+- Offline cache (service worker, HTTPS): the kiosk page opens without internet; queued votes survive expired sessions.
 - Roles organizer, analyst, administrator.
 - Results per event and day, individual ratings (delete for administrators), CSV export.
 - PDF reports for one or many events, in German or English.

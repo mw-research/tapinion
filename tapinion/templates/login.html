@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ t('login.title') }} · {{ brand.name or 'Tapinion' }}{% endblock %}
+{% block head %}
+<script>
+  try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf("tapinion-resume-") === 0) localStorage.removeItem(k); }); } catch (e) {}
+</script>
+{% endblock %}
 {% block content %}
 <div class="login-grid {{ 'with-kiosks' if kiosks }}">
   <section class="card">

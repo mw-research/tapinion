@@ -166,6 +166,7 @@ def visible_event(request, user, event_id):
 
 
 templates.env.globals["question_of"] = i18n.question_of
+templates.env.globals["strptime"] = lambda text: datetime.fromisoformat(text)
 
 
 # --- setup, login, language ------------------------------------------------
@@ -290,6 +291,7 @@ def login_page(request: Request, next: str = "/dashboard"):
         kiosks = open_kiosks(conn) if branding.get(conn)["show_open_events"] else []
     # Whoever leaves a kiosk for the login page needs the PIN to get back in.
     request.session.pop("kiosks", None)
+    request.session.pop("devices", None)
     return render(request, "login.html", user=None, next=next, error=None, kiosks=kiosks)
 
 
@@ -383,6 +385,13 @@ def logo(request: Request):
     })
 
 
+@app.get("/sw.js", include_in_schema=False)
+def service_worker():
+    """Offline cache for kiosk devices; served from the root so it may cover the kiosk pages."""
+    return Response((BASE / "static" / "sw.js").read_bytes(), media_type="text/javascript",
+                    headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"})
+
+
 @app.get("/manifest.webmanifest")
 def manifest(request: Request):
     with db.session() as conn:
@@ -407,7 +416,9 @@ def dashboard_context(conn, user, event_id, day):
     day = day if day in days else None
     rows = db.responses_for(conn, event["id"], day)
     ctx = {"events": events, "event": event, "days": days, "day": day,
-           "result": stats.result_for(event["mode"], [r["value"] for r in rows])}
+           "result": stats.result_for(event["mode"], [r["value"] for r in rows]),
+           "devices": [d for d in db.list_devices(conn, event["id"], day) if d["n_responses"] or not d["revoked"]],
+           "without_device": db.responses_without_device(conn, event["id"], day)}
     if can(user, "dashboard.details"):
         ctx["hourly"] = stats.hourly(rows)
     return ctx
@@ -665,14 +676,37 @@ def event_qr(request: Request, event_id: int):
     return render(request, "_event_qr.html", user=user, e=event, url=url, svg=netinfo.qr_svg(url))
 
 
+@app.get("/events/{event_id}/devices", response_class=HTMLResponse)
+def event_devices(request: Request, event_id: int):
+    user = require(request, "events.view")
+    event = visible_event(request, user, event_id)
+    with db.session() as conn:
+        devices = db.list_devices(conn, event_id)
+    return render(request, "_event_devices.html", user=user, e=event, devices=devices, now=datetime.now())
+
+
+@app.post("/devices/{device_id}/revoke", response_class=HTMLResponse)
+async def device_revoke(request: Request, device_id: int):
+    user = require(request, "events.edit")
+    await checked_form(request)
+    with db.session() as conn:
+        row = conn.execute("SELECT event_id FROM devices WHERE id = ?", (device_id,)).fetchone()
+        if not row:
+            raise HTTPException(404)
+        db.revoke_device(conn, device_id)
+    return event_devices(request, row["event_id"])
+
+
 @app.get("/events/{event_id}/kiosk")
 def event_kiosk(request: Request, event_id: int):
     """Start the kiosk on this device: the login ends, the kiosk is unlocked for this browser."""
     user = require(request, "kiosk.start")
     event = visible_event(request, user, event_id)
     lang = lang_of(request, user)
+    secret = new_device(event, None, lang)
     request.session.clear()
-    request.session.update(lang=lang, kiosks=[event["kiosk_token"]])
+    request.session["lang"] = lang
+    remember_device(request, event["kiosk_token"], secret)
     return RedirectResponse(f"/k/{event['kiosk_token']}", status_code=303)
 
 
@@ -688,6 +722,45 @@ def kiosk_event(request, token):
 
 def kiosk_unlocked(request, token) -> bool:
     return token in request.session.get("kiosks", [])
+
+
+def session_secret(request, token):
+    return (request.session.get("devices") or {}).get(token)
+
+
+def remember_device(request, token, secret):
+    """Unlock the kiosk for this browser session and keep the device key in it."""
+    request.session.pop("uid", None)  # a kiosk device is never logged in
+    devices = dict(request.session.get("devices") or {})
+    devices.pop(token, None)
+    devices[token] = secret
+    request.session["devices"] = dict(list(devices.items())[-5:])
+    request.session["kiosks"] = list(dict.fromkeys(request.session.get("kiosks", []) + [token]))[-5:]
+
+
+def new_device(event, name, lang):
+    with db.session() as conn:
+        n = db.count_devices(conn, event["id"]) + 1
+        name = (name or "").strip()[:40] or i18n.translate(lang, "devices.default_name", n=n)
+        _, secret = db.create_device(conn, event["id"], name)
+    return secret
+
+
+def kiosk_device(request, event, secret=None, include_revoked=False):
+    """The device behind this request: key from the request (header or form) or the session."""
+    secret = secret or request.headers.get("X-Kiosk-Device") or session_secret(request, event["kiosk_token"])
+    with db.session() as conn:
+        return db.device_for(conn, event["id"], secret, include_revoked=include_revoked), secret
+
+
+def kiosk_authorized(request, event):
+    """Unlocked in this session, or a valid device key (e.g. after the session expired)."""
+    device, secret = kiosk_device(request, event)
+    if device:
+        if not kiosk_unlocked(request, event["kiosk_token"]):
+            remember_device(request, event["kiosk_token"], secret)
+        return device
+    return None
 
 
 def kiosk_lang(request, event, lang=None):
@@ -710,9 +783,41 @@ def check_pin(request, event, pin):
 def kiosk(request: Request, token: str, lang: str | None = None):
     event = kiosk_event(request, token)
     klang = kiosk_lang(request, event, lang)
-    if not kiosk_unlocked(request, token):
-        return render(request, "kiosk_unlock.html", user=None, e=event, lang=klang, error=None)
-    return render(request, "kiosk.html", user=None, e=event, lang=klang)
+    if not kiosk_unlocked(request, token) or not kiosk_device(request, event)[0]:
+        request.session["kiosks"] = [k for k in request.session.get("kiosks", []) if k != token]
+        resp = render(request, "kiosk_unlock.html", user=None, e=event, lang=klang, error=None)
+        resp.headers["X-Kiosk-State"] = "locked"
+        return resp
+    resp = render(request, "kiosk.html", user=None, e=event, lang=klang, device_secret=session_secret(request, token))
+    resp.headers["X-Kiosk-State"] = "unlocked"
+    return resp
+
+
+@app.post("/k/{token}/resume")
+async def kiosk_resume(request: Request, token: str):
+    """A device that already ran this kiosk (key kept on the device) continues without the PIN,
+    e.g. after a restart. Leaving the kiosk with the PIN, or via the login page, ends this."""
+    event = kiosk_event(request, token)
+    secret = (await request.form()).get("device", "")
+    device, _ = kiosk_device(request, event, secret)
+    if not device:
+        return Response(status_code=403)
+    remember_device(request, token, secret)
+    with db.session() as conn:
+        db.touch_device(conn, device["id"])
+    return Response(status_code=204)
+
+
+@app.post("/k/{token}/ping")
+def kiosk_ping(request: Request, token: str):
+    """Heartbeat of a running kiosk, so the device list shows which devices are alive."""
+    event = kiosk_event(request, token)
+    device = kiosk_authorized(request, event)
+    if not device:
+        return Response(status_code=403)
+    with db.session() as conn:
+        db.touch_device(conn, device["id"])
+    return Response(status_code=204)
 
 
 @app.post("/k/{token}/unlock", response_class=HTMLResponse)
@@ -724,15 +829,15 @@ async def kiosk_unlock(request: Request, token: str):
     if error:
         return render(request, "_kiosk_pinpad.html", user=None, e=event, lang=klang, mode="unlock",
                       error=i18n.translate(klang, error))
-    request.session.pop("uid", None)  # a kiosk device is never logged in
-    request.session["kiosks"] = list(dict.fromkeys(request.session.get("kiosks", []) + [token]))[-5:]
+    secret = new_device(event, form.get("device_name"), klang)
+    remember_device(request, token, secret)
     return Response(status_code=204, headers={"HX-Redirect": f"/k/{token}?lang={klang}"})
 
 
 @app.get("/k/{token}/form", response_class=HTMLResponse)
 def kiosk_form(request: Request, token: str, lang: str | None = None):
     event = kiosk_event(request, token)
-    if not kiosk_unlocked(request, token):
+    if not kiosk_authorized(request, event):
         raise Redirect(f"/k/{token}")
     return render(request, "_kiosk_vote.html", user=None, e=event, lang=kiosk_lang(request, event, lang))
 
@@ -752,9 +857,16 @@ def parse_client_time(ts):
 @app.post("/k/{token}/vote", response_class=HTMLResponse)
 async def kiosk_vote(request: Request, token: str):
     event = kiosk_event(request, token)
-    if not kiosk_unlocked(request, token):
-        raise HTTPException(403, tr(request, "kiosk.locked"))
     form = await request.form()
+    when = parse_client_time(form.get("ts"))
+    device = kiosk_authorized(request, event)
+    if not device and form.get("queued"):
+        # stored on the device before it was deliberately switched off: still counts
+        old, _ = kiosk_device(request, event, form.get("device"), include_revoked=True)
+        if old and old["revoked_at"] and when and when <= old["revoked_at"]:
+            device = old
+    if not device:
+        raise HTTPException(403, tr(request, "kiosk.locked"))
     klang = kiosk_lang(request, event, form.get("lang"))
     value = form.get("value", "")
     allowed = db.NPS_VALUES if event["mode"] == "nps" else db.SMILEY_VALUES
@@ -763,7 +875,9 @@ async def kiosk_vote(request: Request, token: str):
     if value not in allowed:
         raise HTTPException(400, i18n.translate(klang, "kiosk.invalid"))
     with db.session() as conn:
-        db.add_response(conn, event["id"], value, parse_client_time(form.get("ts")))
+        db.add_response(conn, event["id"], value, when, device["id"])
+        if not device["revoked"]:
+            db.touch_device(conn, device["id"])
     if form.get("queued"):
         return Response(status_code=204)
     return render(request, "_kiosk_thanks.html", user=None, e=event, lang=klang)
@@ -785,7 +899,12 @@ async def kiosk_exit(request: Request, token: str):
     if error:
         return render(request, "_kiosk_pinpad.html", user=None, e=event, lang=klang, mode="exit",
                       error=i18n.translate(klang, error))
+    device, _ = kiosk_device(request, event)
+    if device:
+        with db.session() as conn:
+            db.revoke_device(conn, device["id"])
     request.session["kiosks"] = [k for k in request.session.get("kiosks", []) if k != token]
+    request.session["devices"] = {k: v for k, v in (request.session.get("devices") or {}).items() if k != token}
     return Response(status_code=204, headers={"HX-Redirect": "/login"})
 
 

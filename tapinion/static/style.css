@@ -257,3 +257,11 @@ body.kiosk {
 .howto { margin: 0; padding-left: 1.2rem; display: grid; gap: .7rem; }
 .kiosk-full { border: 1px solid #dde3ea; background: #fff; color: #5c6878; font-size: 1.3rem; width: 44px; height: 40px; border-radius: 8px; }
 .kiosk-full.on { background: var(--brand); color: var(--on-brand); }
+
+/* --- kiosk devices --- */
+.modal.wide { max-width: 680px; text-align: left; }
+.modal.wide .form-actions { justify-content: flex-end; }
+.devices tr.revoked td { color: var(--muted); }
+.device-name { color: #5c6878; font-size: .9rem; width: 260px; margin-bottom: .4rem; }
+.device-name input { font-size: 1rem; text-align: center; }
+html.resuming .pinpad { visibility: hidden; }

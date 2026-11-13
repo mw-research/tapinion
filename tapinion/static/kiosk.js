@@ -10,6 +10,14 @@
   if (!shell) return;
   const token = shell.dataset.token;
   const KEY = "tapinion-queue-" + token;
+  const RESUME = "tapinion-resume-" + token;
+  // Device key: votes are accepted with it even after days without a connection, and the
+  // device can continue the kiosk after a restart without the PIN.
+  let device = shell.dataset.device || "";
+  try {
+    if (device) localStorage.setItem(RESUME, device);
+    else device = localStorage.getItem(RESUME) || "";
+  } catch (e) { /* storage blocked */ }
   const stage = document.getElementById("stage");
   const pending = document.querySelector(".kiosk-pending");
   let voteHtml = null;     // last voting form, to restore it without the server
@@ -53,9 +61,13 @@
         body.append("lang", item.lang);
         body.append("ts", item.ts);
         body.append("queued", "1");
+        if (item.device || device) body.append("device", item.device || device);
         let res;
         try {
-          res = await fetch("/k/" + token + "/vote", { method: "POST", body: body, credentials: "same-origin" });
+          res = await fetch("/k/" + token + "/vote", {
+            method: "POST", body: body, credentials: "same-origin",
+            headers: (item.device || device) ? { "X-Kiosk-Device": item.device || device } : {},
+          });
         } catch (e) {
           break; // still offline
         }
@@ -74,6 +86,9 @@
   }, true);
 
   document.body.addEventListener("htmx:afterSwap", remember);
+  document.body.addEventListener("htmx:configRequest", function (ev) {
+    if (device && ev.detail.path.indexOf("/k/") === 0) ev.detail.headers["X-Kiosk-Device"] = device;
+  });
 
   document.body.addEventListener("htmx:sendError", function (ev) {
     const elt = ev.detail.elt;
@@ -81,7 +96,7 @@
     if (form && lastValue !== null) {
       // the vote did not reach the server: keep it and thank the visitor anyway
       const items = load();
-      items.push({ value: String(lastValue), lang: form.querySelector("[name=lang]").value, ts: localTime() });
+      items.push({ value: String(lastValue), lang: form.querySelector("[name=lang]").value, ts: localTime(), device: device });
       lastValue = null;
       save(items);
       const tpl = document.getElementById("thanks-tpl");
@@ -92,6 +107,21 @@
       setTimeout(restore, 500);
     }
   });
+
+  // Heartbeat: the device list shows which kiosks are alive. A device switched off by an
+  // administrator goes back to the PIN screen.
+  async function ping() {
+    try {
+      const res = await fetch("/k/" + token + "/ping", {
+        method: "POST", credentials: "same-origin", headers: device ? { "X-Kiosk-Device": device } : {},
+      });
+      if (res.status === 403 && load().length === 0) {
+        try { localStorage.removeItem(RESUME); } catch (e) {}
+        location.reload();
+      }
+    } catch (e) { /* offline */ }
+  }
+  setInterval(ping, 60000);
 
   window.addEventListener("online", flush);
   setInterval(flush, 15000);

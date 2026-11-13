@@ -1,6 +1,26 @@
 {% extends "base.html" %}
 {% block title %}{{ e.name }}{% endblock %}
 {% block bodyclass %}kiosk{% endblock %}
+{% block head %}
+<script>
+  // This device already ran the kiosk (e.g. before a restart)? Continue without the PIN.
+  (function () {
+    var key = "tapinion-resume-{{ e.kiosk_token }}", secret = null;
+    try { secret = localStorage.getItem(key); } catch (e) {}
+    if (!secret) return;
+    document.documentElement.classList.add("resuming");
+    var body = new FormData(); body.append("device", secret);
+    fetch("/k/{{ e.kiosk_token }}/resume", { method: "POST", body: body, credentials: "same-origin" })
+      .then(function (r) {
+        if (r.status === 204) { location.reload(); return; }
+        try { localStorage.removeItem(key); } catch (e) {}
+        document.documentElement.classList.remove("resuming");
+      })
+      .catch(function () { document.documentElement.classList.remove("resuming"); });
+  })();
+</script>
+{% include "_sw_register.html" %}
+{% endblock %}
 {% block shell %}
 <div class="kiosk-shell">
   <header class="kiosk-top">

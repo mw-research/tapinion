@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ e.name }}{% endblock %}
 {% block bodyclass %}kiosk{% endblock %}
-{% block head %}<script src="/static/kiosk.js?v={{ version }}" defer></script>{% endblock %}
+{% block head %}<script src="/static/kiosk.js?v={{ version }}" defer></script>{% include "_sw_register.html" %}{% endblock %}
 {% block shell %}
-<div class="kiosk-shell" data-token="{{ e.kiosk_token }}">
+<div class="kiosk-shell" data-token="{{ e.kiosk_token }}" data-device="{{ device_secret or '' }}">
   <header class="kiosk-top">
     <img src="{{ brand.logo_url }}" alt="" class="kiosk-logo">
     <div class="kiosk-tools">

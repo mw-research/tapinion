@@ -63,6 +63,22 @@ The downloads are not code-signed yet, so the first start shows a warning once:
 Windows *"Windows protected your PC"* → *More info* → *Run anyway*;
 macOS *"cannot be opened"* → *System Settings → Privacy & Security* → *Open Anyway*.
 
+### Without a shared Wi-Fi: tablets anywhere with internet
+
+For a tablet that stays at an exit or reception for days – with power and internet, but not in
+the network of your computer: run Tapinion on a server reachable over the internet with HTTPS
+(see *On a server*) and set `PUBLIC_URL`. Create the event, scan its QR code with the tablet once,
+enter the PIN and give the device a name, e.g. *Exit north*. From then on:
+
+- after a restart or reload the tablet continues the kiosk by itself – no PIN, until it is left
+  with the PIN or switched off under *Events → Devices*;
+- during internet outages ratings are kept on the tablet with their time and sent later; on HTTPS
+  the kiosk page also opens without internet;
+- *Events → Devices* shows every device, when it was last seen and how many ratings it collected;
+  the results show the share per device.
+
+Any number of devices can collect for the same event, e.g. at several entrances.
+
 ### On a server
 
 **Docker** (image built from this repository):

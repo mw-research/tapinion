@@ -64,6 +64,23 @@ Die Downloads sind noch nicht codesigniert; beim ersten Start erscheint deshalb 
 Windows *„Der Computer wurde durch Windows geschützt“* → *Weitere Informationen* → *Trotzdem ausführen*;
 macOS *„kann nicht geöffnet werden“* → *Systemeinstellungen → Datenschutz & Sicherheit* → *Dennoch öffnen*.
 
+### Ohne gemeinsames WLAN: Tablets überall mit Internet
+
+Für ein Tablet, das tagelang an einem Ausgang oder Empfang steht – mit Strom und Internet, aber
+nicht im Netz Ihres Rechners: Tapinion auf einem über das Internet erreichbaren Server mit HTTPS
+betreiben (siehe *Auf einem Server*) und `PUBLIC_URL` setzen. Veranstaltung anlegen, ihren QR-Code
+einmal mit dem Tablet scannen, PIN eingeben und dem Gerät einen Namen geben, etwa *Ausgang Nord*.
+Danach gilt:
+
+- nach einem Neustart oder Neuladen setzt das Tablet den Kiosk selbst fort – ohne PIN, bis es mit
+  der PIN verlassen oder unter *Veranstaltungen → Geräte* abgemeldet wird;
+- bei Internetausfällen bleiben Bewertungen mit ihrer Uhrzeit auf dem Tablet und werden später
+  übertragen; über HTTPS öffnet sich die Kiosk-Seite auch ohne Internet;
+- *Veranstaltungen → Geräte* zeigt jedes Gerät, wann es zuletzt aktiv war und wie viele Bewertungen
+  es gesammelt hat; die Auswertung zeigt den Anteil je Gerät.
+
+Beliebig viele Geräte können für dieselbe Veranstaltung sammeln, etwa an mehreren Eingängen.
+
 ### Auf einem Server
 
 **Docker** (Abbild aus diesem Repository):

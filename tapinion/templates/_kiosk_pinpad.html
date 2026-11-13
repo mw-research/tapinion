@@ -6,6 +6,11 @@
   {% else %}
   <form hx-post="/k/{{ e.kiosk_token }}/{{ pad_mode }}" hx-target="#pinpad" hx-swap="outerHTML">
     <input type="hidden" name="lang" value="{{ lang }}">
+    {% if pad_mode == 'unlock' %}
+    <label class="device-name">{{ t('kiosk.device_name') }}
+      <input name="device_name" maxlength="40" placeholder="{{ t('kiosk.device_name_placeholder') }}" autocomplete="off">
+    </label>
+    {% endif %}
     <input name="pin" type="password" inputmode="numeric" autocomplete="off" readonly class="pin-display" aria-label="PIN">
     {% if error %}<p class="pin-error" role="alert">{{ error }}</p>{% endif %}
     <div class="keys">

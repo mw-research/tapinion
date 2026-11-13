@@ -7,7 +7,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -32,11 +32,22 @@ CREATE TABLE IF NOT EXISTS events (
     created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS devices (
+    id INTEGER PRIMARY KEY,
+    event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    secret_hash TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    last_seen TEXT,
+    revoked INTEGER NOT NULL DEFAULT 0,
+    revoked_at TEXT
+);
 CREATE TABLE IF NOT EXISTS responses (
     id INTEGER PRIMARY KEY,
     event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     created_at TEXT NOT NULL,
-    value TEXT NOT NULL
+    value TEXT NOT NULL,
+    device_id INTEGER REFERENCES devices(id) ON DELETE SET NULL
 );
 CREATE INDEX IF NOT EXISTS idx_responses_event ON responses(event_id, created_at);
 CREATE TABLE IF NOT EXISTS settings (
@@ -92,6 +103,9 @@ def init_db() -> None:
         if version < 2 and "events" in tables:
             _migrate_v1(conn)
         conn.executescript(SCHEMA)
+        columns = {r[1] for r in conn.execute("PRAGMA table_info(responses)")}
+        if "device_id" not in columns:  # schema 2 -> 3
+            conn.execute("ALTER TABLE responses ADD COLUMN device_id INTEGER REFERENCES devices(id) ON DELETE SET NULL")
         conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 
@@ -180,7 +194,8 @@ def create_user(conn, username, pw_hash, role, lang=None):
 
 # --- events ----------------------------------------------------------------
 
-_EVENT_SELECT = """SELECT e.*, (SELECT COUNT(*) FROM responses r WHERE r.event_id = e.id) AS n_responses
+_EVENT_SELECT = """SELECT e.*, (SELECT COUNT(*) FROM responses r WHERE r.event_id = e.id) AS n_responses,
+                          (SELECT COUNT(*) FROM devices d WHERE d.event_id = e.id AND d.revoked = 0) AS n_devices
                    FROM events e"""
 
 
@@ -233,10 +248,10 @@ def select_events(conn, date_from=None, date_to=None, mode=None, only_with_data=
 
 # --- responses -------------------------------------------------------------
 
-def add_response(conn, event_id, value, created_at=None):
+def add_response(conn, event_id, value, created_at=None, device_id=None):
     conn.execute(
-        "INSERT INTO responses (event_id, created_at, value) VALUES (?, ?, ?)",
-        (event_id, created_at or now_iso(), value),
+        "INSERT INTO responses (event_id, created_at, value, device_id) VALUES (?, ?, ?, ?)",
+        (event_id, created_at or now_iso(), value, device_id),
     )
 
 
@@ -270,3 +285,67 @@ def responses_page(conn, event_id, day=None, offset=0, limit=50):
 def delete_response(conn, response_id):
     cur = conn.execute("DELETE FROM responses WHERE id = ?", (response_id,))
     return cur.rowcount
+
+
+# --- kiosk devices ---------------------------------------------------------
+# Every device that opens a kiosk gets its own random key (kept on the device). Votes are
+# accepted with that key even when the browser session has long expired, e.g. after days
+# offline, and a device can resume its kiosk after a restart without the PIN.
+
+def _hash(secret: str) -> str:
+    import hashlib
+
+    return hashlib.sha256(secret.encode()).hexdigest()
+
+
+def create_device(conn, event_id, name):
+    secret = secrets.token_urlsafe(24)
+    cur = conn.execute(
+        "INSERT INTO devices (event_id, name, secret_hash, created_at, last_seen) VALUES (?, ?, ?, ?, ?)",
+        (event_id, name, _hash(secret), now_iso(), now_iso()),
+    )
+    return cur.lastrowid, secret
+
+
+def device_for(conn, event_id, secret, include_revoked=False):
+    """The device with this key for this event (active only, unless include_revoked), or None."""
+    if not secret:
+        return None
+    row = conn.execute("SELECT * FROM devices WHERE event_id = ? AND secret_hash = ?",
+                       (event_id, _hash(secret))).fetchone()
+    if row and row["revoked"] and not include_revoked:
+        return None
+    return row
+
+
+def touch_device(conn, device_id):
+    conn.execute("UPDATE devices SET last_seen = ? WHERE id = ?", (now_iso(), device_id))
+
+
+def revoke_device(conn, device_id):
+    conn.execute("UPDATE devices SET revoked = 1, revoked_at = ? WHERE id = ? AND revoked = 0",
+                 (now_iso(), device_id))
+
+
+def count_devices(conn, event_id) -> int:
+    return conn.execute("SELECT COUNT(*) FROM devices WHERE event_id = ?", (event_id,)).fetchone()[0]
+
+
+def responses_without_device(conn, event_id, day=None) -> int:
+    sql = "SELECT COUNT(*) FROM responses WHERE event_id = ? AND device_id IS NULL"
+    args = [event_id]
+    if day:
+        sql += " AND substr(created_at, 1, 10) = ?"
+        args.append(day)
+    return conn.execute(sql, args).fetchone()[0]
+
+
+def list_devices(conn, event_id, day=None):
+    """Devices of an event with their number of ratings (optionally for one day)."""
+    day_sql = " AND substr(r.created_at, 1, 10) = ?" if day else ""
+    args = [day] if day else []
+    return conn.execute(
+        f"""SELECT d.*, (SELECT COUNT(*) FROM responses r WHERE r.device_id = d.id{day_sql}) AS n_responses
+            FROM devices d WHERE d.event_id = ? ORDER BY d.revoked, d.created_at""",
+        args + [event_id],
+    ).fetchall()

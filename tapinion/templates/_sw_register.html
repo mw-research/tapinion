@@ -1,0 +1,6 @@
+<script>
+  // Offline cache for the kiosk (browsers allow it on HTTPS and localhost only).
+  if ("serviceWorker" in navigator && window.isSecureContext) {
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(function () {});
+  }
+</script>

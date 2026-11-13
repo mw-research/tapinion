@@ -1,0 +1,36 @@
+<div class="modal-backdrop" hx-on:click="if (event.target === this) this.remove()">
+  <div class="modal card wide" role="dialog" aria-modal="true" aria-labelledby="dev-title-{{ e.id }}">
+    <h2 id="dev-title-{{ e.id }}">{{ t('devices.title') }} · {{ e.name }}</h2>
+    <p class="muted small">{{ t('devices.intro') }}</p>
+    {% if devices %}
+    <table class="list devices">
+      <thead><tr><th>{{ t('devices.name') }}</th><th>{{ t('devices.status') }}</th><th class="num">{{ t('devices.responses') }}</th><th></th></tr></thead>
+      <tbody>
+      {% for d in devices %}
+        {% set seen = d.last_seen %}
+        {% set age = ((now - strptime(seen)).total_seconds() / 60) if seen else none %}
+        <tr class="{{ 'revoked' if d.revoked }}">
+          <td>{{ d.name }}</td>
+          <td>
+            {% if d.revoked %}<span class="badge off">{{ t('devices.revoked') }}</span>
+            {% elif age is not none and age < 3 %}<span class="dot happy"></span>{{ t('devices.online') }}
+            {% else %}<span class="dot passives"></span>{{ t('devices.last_seen', when=seen[:16]) }}{% endif %}
+          </td>
+          <td class="num">{{ d.n_responses }}</td>
+          <td class="actions">
+            {% if not d.revoked and can('events.edit') %}
+            <button class="btn danger small" hx-post="/devices/{{ d.id }}/revoke" hx-target="closest .modal-backdrop" hx-swap="outerHTML"
+                    hx-confirm="{{ t('devices.revoke_confirm', name=d.name) }}">{{ t('devices.revoke') }}</button>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p>{{ t('devices.none') }}</p>{% endif %}
+    <div class="form-actions">
+      <button class="btn ghost" hx-get="/events/{{ e.id }}/devices" hx-target="closest .modal-backdrop" hx-swap="outerHTML">{{ t('devices.refresh') }}</button>
+      <button class="primary" hx-on:click="this.closest('.modal-backdrop').remove()">{{ t('common.close') }}</button>
+    </div>
+  </div>
+</div>
