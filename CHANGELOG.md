@@ -11,6 +11,8 @@ First public version.
 - Results per event and day, individual ratings (delete for administrators), CSV export.
 - PDF reports for one or many events, in German or English.
 - Settings: name, logo, colours, users.
-- Desktop app (Windows, macOS, Linux) with QR codes for tablets in the same network.
+- Setup wizard: language, administrator account, look, first event, connect the tablet.
+- Installers: Windows setup (shortcuts, optional autostart, firewall rule), macOS disk image, Linux AppImage.
+- Desktop app with QR codes for tablets in the same network; a second start opens the running instance.
 - Android kiosk app (full screen, screen on, optional app pinning, QR setup).
 - Docker image and Kubernetes manifest.
