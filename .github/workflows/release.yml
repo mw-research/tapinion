@@ -56,7 +56,6 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@v3
       - name: Keystore
         env:
           KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
