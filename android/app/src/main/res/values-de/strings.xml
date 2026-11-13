@@ -18,4 +18,6 @@
     <string name="retry">Erneut versuchen</string>
     <string name="change_server">Andere Verbindung wählen</string>
     <string name="change_server_question">Mit einem anderen Tapinion verbinden?</string>
+    <string name="quit_question">Tapinion beenden?</string>
+    <string name="quit">Beenden</string>
 </resources>

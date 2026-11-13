@@ -291,6 +291,13 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
+            public void onPageFinished(WebView view, String page) {
+                // On the start/login page (e.g. after leaving the kiosk with the PIN) "back" must not
+                // lead into the kiosk again: forget the history, so back offers to quit the app.
+                if (isStartPage(page)) view.clearHistory();
+            }
+
+            @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) showOffline();
             }
@@ -347,15 +354,22 @@ public class MainActivity extends AppCompatActivity {
         }
         String path = web.getUrl() == null ? "" : Uri.parse(web.getUrl()).getPath();
         if (path != null && path.startsWith("/k/")) return;  // the kiosk is left with the PIN only
-        if (web.canGoBack()) {
+        if (!isStartPage(web.getUrl()) && web.canGoBack()) {
             web.goBack();
             return;
         }
         new AlertDialog.Builder(this)
-                .setMessage(R.string.change_server_question)
-                .setPositiveButton(R.string.change_server, (d, w) -> showSetup(null))
+                .setTitle(R.string.quit_question)
+                .setPositiveButton(R.string.quit, (d, w) -> finishAndRemoveTask())
+                .setNeutralButton(R.string.change_server, (d, w) -> showSetup(null))
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
+    }
+
+    private static boolean isStartPage(String page) {
+        if (page == null) return false;
+        String path = Uri.parse(page).getPath();
+        return path == null || path.isEmpty() || path.equals("/") || path.equals("/login");
     }
 
     private void showSystemBars(boolean show) {
