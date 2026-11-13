@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ e.name }}{% endblock %}
+{% block bodyclass %}kiosk{% endblock %}
+{% block shell %}
+<div class="kiosk-shell">
+  <header class="kiosk-top">
+    <img src="{{ brand.logo_url }}" alt="" class="kiosk-logo">
+    <div class="kiosk-tools">
+      <nav class="kiosk-lang" aria-label="{{ t('kiosk.language') }}">
+        {% for code in ('de', 'en') %}<a class="{{ 'on' if code == lang }}" href="/k/{{ e.kiosk_token }}?lang={{ code }}">{{ code | upper }}</a>{% endfor %}
+      </nav>
+    </div>
+  </header>
+  <main id="stage" class="stage">
+    <p class="unlock-event">{{ e.name }}</p>
+    {% include "_kiosk_pinpad.html" with context %}
+    <a class="back" href="/login">{{ t('kiosk.to_login') }}</a>
+  </main>
+</div>
+{% endblock %}

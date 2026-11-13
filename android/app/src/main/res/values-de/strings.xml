@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tapinion</string>
+    <string name="setup_title">Tapinion verbinden</string>
+    <string name="setup_intro">Scannen Sie den QR-Code, den Tapinion neben einer Veranstaltung zeigt (Veranstaltungen → QR-Code), oder geben Sie die Adresse des Rechners ein, auf dem Tapinion läuft. Das Tablet muss im selben Netz sein.</string>
+    <string name="setup_scan">QR-Code scannen</string>
+    <string name="setup_scan_prompt">Kamera auf den Tapinion-QR-Code richten</string>
+    <string name="setup_or">oder Adresse eingeben:</string>
+    <string name="setup_connect">Verbinden</string>
+    <string name="setup_pin_app">App anheften, solange ein Kiosk läuft</string>
+    <string name="setup_invalid">Das ist keine gültige Adresse.</string>
+    <string name="setup_about">Tapinion – tap your opinion. Freie Software (AGPL-3.0), © Markus Wilhelm, mw-research.</string>
+    <string name="offline">Tapinion ist nicht erreichbar unter\n%1$s\n\nIst der Rechner mit Tapinion eingeschaltet und im selben Netz? Neuer Versuch läuft automatisch …</string>
+    <string name="retry">Erneut versuchen</string>
+    <string name="change_server">Adresse ändern</string>
+    <string name="change_server_question">Mit einer anderen Tapinion-Adresse verbinden?</string>
+</resources>

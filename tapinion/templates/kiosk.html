@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ e.name }}{% endblock %}
+{% block bodyclass %}kiosk{% endblock %}
+{% block head %}<script src="/static/kiosk.js?v={{ version }}" defer></script>{% endblock %}
+{% block shell %}
+<div class="kiosk-shell" data-token="{{ e.kiosk_token }}">
+  <header class="kiosk-top">
+    <img src="{{ brand.logo_url }}" alt="" class="kiosk-logo">
+    <div class="kiosk-tools">
+      <span class="kiosk-pending" hidden aria-live="polite"></span>
+      <nav class="kiosk-lang" aria-label="{{ t('kiosk.language') }}">
+        {% for code in ('de', 'en') %}
+        <button class="{{ 'on' if code == lang }}" hx-get="/k/{{ e.kiosk_token }}/form?lang={{ code }}" hx-target="#stage" hx-push-url="/k/{{ e.kiosk_token }}?lang={{ code }}"
+                hx-on::after-request="document.querySelectorAll('.kiosk-lang button').forEach(b => b.classList.toggle('on', b === this))">{{ code | upper }}</button>
+        {% endfor %}
+      </nav>
+      <button class="kiosk-exit" aria-label="{{ t('kiosk.exit') }}" hx-get="/k/{{ e.kiosk_token }}/exit?lang={{ lang }}" hx-target="#stage">⋯</button>
+    </div>
+  </header>
+  <main id="stage" class="stage">{% include "_kiosk_vote.html" %}</main>
+  <template id="thanks-tpl">{% include "_kiosk_thanks_static.html" %}</template>
+</div>
+{% endblock %}

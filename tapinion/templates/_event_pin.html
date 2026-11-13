@@ -1,0 +1,21 @@
+{% if request.url.path.endswith('/pin') %}{% set shown = true %}{% else %}{% set shown = false %}{% endif %}
+<div class="pin-cell" id="pin-box-{{ e.id }}">
+{% if edit is defined and edit %}
+  <form class="pin-edit" hx-post="/events/{{ e.id }}/pin" hx-target="#pin-box-{{ e.id }}" hx-swap="outerHTML">
+    <input name="pin" inputmode="numeric" pattern="\d{4,8}" required autocomplete="off" value="{{ e.kiosk_pin or '' }}" aria-label="{{ t('events.pin') }}">
+    <button class="btn small">{{ t('common.save') }}</button>
+    <button type="button" class="btn ghost small" hx-get="/events/{{ e.id }}/pin" hx-target="#pin-box-{{ e.id }}" hx-swap="outerHTML">{{ t('common.cancel') }}</button>
+  </form>
+  {% if error %}<div class="note error">{{ error }}</div>{% endif %}
+{% elif not e.kiosk_pin %}
+  <span class="badge off">{{ t('events.pin_missing') }}</span>
+  {% if can('pin.edit') %}<button class="link" hx-get="/events/{{ e.id }}/pin?edit=1" hx-target="#pin-box-{{ e.id }}" hx-swap="outerHTML">{{ t('events.pin_set') }}</button>{% endif %}
+{% elif shown %}
+  <code class="pin">{{ e.kiosk_pin }}</code>
+  {% if can('pin.edit') %}<button class="link" hx-get="/events/{{ e.id }}/pin?edit=1" hx-target="#pin-box-{{ e.id }}" hx-swap="outerHTML">{{ t('common.change') }}</button>{% endif %}
+  {% if message is defined and message %}<div class="note">{{ message }}</div>{% endif %}
+{% else %}
+  <code class="pin">••••</code>
+  {% if can('pin.view') %}<button class="link" hx-get="/events/{{ e.id }}/pin" hx-target="#pin-box-{{ e.id }}" hx-swap="outerHTML">{{ t('events.pin_show') }}</button>{% endif %}
+{% endif %}
+</div>

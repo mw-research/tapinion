@@ -1,0 +1,6 @@
+{% set n = selection | sum(attribute='n_responses') %}
+{% if selection %}
+<p class="preview">{{ t('reports.preview', events=selection | length, responses=n, first=selection[0].event_date, last=selection[-1].event_date) }}</p>
+{% else %}
+<p class="preview muted">{{ t('reports.preview_empty') }}</p>
+{% endif %}

@@ -1,0 +1,13 @@
+<div class="modal-backdrop" hx-on:click="if (event.target === this) this.remove()">
+  <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="qr-title-{{ e.id }}">
+    <h2 id="qr-title-{{ e.id }}">{{ e.name }}</h2>
+    <p class="muted">{{ t('events.qr_intro') }}</p>
+    <div class="qr">{{ svg | safe }}</div>
+    <p class="qr-url"><code>{{ url }}</code></p>
+    <p class="muted small">{{ t('events.qr_pin_hint') }}</p>
+    <div class="form-actions">
+      <button class="btn ghost" hx-on:click="navigator.clipboard && navigator.clipboard.writeText({{ url | tojson | forceescape }}); this.textContent = {{ t('events.copied') | tojson | forceescape }};">{{ t('events.copy_link') }}</button>
+      <button class="primary" hx-on:click="this.closest('.modal-backdrop').remove()">{{ t('common.close') }}</button>
+    </div>
+  </div>
+</div>

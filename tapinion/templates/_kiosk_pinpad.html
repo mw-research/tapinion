@@ -1,0 +1,24 @@
+{% set pad_mode = mode if mode is defined else 'unlock' %}
+<div class="pinpad" id="pinpad">
+  <h1>{{ t('kiosk.pin_title_' ~ pad_mode) }}</h1>
+  {% if not e.kiosk_pin %}
+  <p class="pin-error">{{ t('kiosk.no_pin') }}</p>
+  {% else %}
+  <form hx-post="/k/{{ e.kiosk_token }}/{{ pad_mode }}" hx-target="#pinpad" hx-swap="outerHTML">
+    <input type="hidden" name="lang" value="{{ lang }}">
+    <input name="pin" type="password" inputmode="numeric" autocomplete="off" readonly class="pin-display" aria-label="PIN">
+    {% if error %}<p class="pin-error" role="alert">{{ error }}</p>{% endif %}
+    <div class="keys">
+      {% for k in ['1','2','3','4','5','6','7','8','9'] %}
+      <button type="button" hx-on:click="this.form.pin.value += '{{ k }}'">{{ k }}</button>
+      {% endfor %}
+      <button type="button" aria-label="{{ t('kiosk.clear') }}" hx-on:click="this.form.pin.value = ''">C</button>
+      <button type="button" hx-on:click="this.form.pin.value += '0'">0</button>
+      <button type="submit" class="ok">OK</button>
+    </div>
+  </form>
+  {% endif %}
+  {% if pad_mode == 'exit' %}
+  <button class="back" hx-get="/k/{{ e.kiosk_token }}/form?lang={{ lang }}" hx-target="#stage">{{ t('kiosk.back_to_vote') }}</button>
+  {% endif %}
+</div>

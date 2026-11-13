@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.settings') }} · {{ brand.name or 'Tapinion' }}{% endblock %}
+{% block content %}
+<nav class="tabs" aria-label="{{ t('nav.settings') }}">
+  <a href="/settings?tab=appearance" class="{{ 'on' if tab == 'appearance' }}">{{ t('settings.tab_appearance') }}</a>
+  <a href="/settings?tab=users" class="{{ 'on' if tab == 'users' }}">{{ t('settings.tab_users') }}</a>
+</nav>
+
+{% if tab == 'appearance' %}
+<section class="card">
+  <h1>{{ t('settings.appearance_title') }}</h1>
+  <p class="muted">{{ t('settings.appearance_intro') }}</p>
+  {% if message %}<div class="alert ok" role="status">{{ message }}</div>{% endif %}
+  {% if errors %}<div class="alert" role="alert"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+  <form method="post" action="/settings/appearance" enctype="multipart/form-data" class="settings-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>{{ t('settings.brand_name') }}
+      <input name="brand_name" maxlength="60" value="{{ brand.name }}" placeholder="{{ t('settings.brand_name_placeholder') }}">
+    </label>
+    <div class="logo-field">
+      <span class="label">{{ t('settings.logo') }}</span>
+      <div class="logo-preview"><img src="{{ brand.logo_url }}" alt="{{ t('settings.logo') }}"></div>
+      <input type="file" name="logo" accept="image/png,image/jpeg,image/svg+xml,image/webp">
+      <span class="muted small">{{ t('settings.logo_hint') }}</span>
+      {% if brand.custom_logo %}<label class="check"><input type="checkbox" name="remove_logo" value="1"> {{ t('settings.logo_remove') }}</label>{% endif %}
+    </div>
+    <div class="colors">
+      <label>{{ t('settings.color_primary') }}
+        <span class="color-pair"><input type="color" value="{{ brand.primary }}" oninput="this.nextElementSibling.value = this.value" aria-hidden="true" tabindex="-1">
+        <input name="color_primary" value="{{ brand.primary }}" pattern="#[0-9a-fA-F]{6}" required oninput="if (/^#[0-9a-fA-F]{6}$/.test(this.value)) this.previousElementSibling.value = this.value"></span>
+      </label>
+      <label>{{ t('settings.color_accent') }}
+        <span class="color-pair"><input type="color" value="{{ brand.accent }}" oninput="this.nextElementSibling.value = this.value" aria-hidden="true" tabindex="-1">
+        <input name="color_accent" value="{{ brand.accent }}" pattern="#[0-9a-fA-F]{6}" required oninput="if (/^#[0-9a-fA-F]{6}$/.test(this.value)) this.previousElementSibling.value = this.value"></span>
+      </label>
+    </div>
+    <label class="check"><input type="checkbox" name="show_open_events" value="1" {{ 'checked' if brand.show_open_events }}> {{ t('settings.show_open_events') }}</label>
+    <div class="preview-strip" aria-hidden="true">
+      <span class="btn">{{ t('settings.preview_button') }}</span>
+      <span class="btn accent">{{ t('settings.preview_accent') }}</span>
+    </div>
+    <div class="form-actions">
+      <button class="primary">{{ t('common.save') }}</button>
+    </div>
+  </form>
+  <form method="post" action="/settings/appearance/reset" class="reset-form" onsubmit="return confirm({{ t('settings.reset_confirm') | tojson | forceescape }})">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button class="link">{{ t('settings.reset') }}</button>
+  </form>
+</section>
+{% else %}
+<section class="card">
+  <h1>{{ t('users.create_title') }}</h1>
+  <form class="event-form" hx-post="/settings/users" hx-target="#user-rows" hx-swap="beforeend"
+        hx-on::after-request="if (event.detail.successful && event.detail.elt === this) { this.reset(); document.getElementById('form-errors').innerHTML = ''; }">
+    <label>{{ t('login.username') }} <input name="username" required autocomplete="off"></label>
+    <label>{{ t('users.initial_password', n=10) }} <input name="password" type="password" minlength="10" required autocomplete="new-password"></label>
+    <label>{{ t('users.role') }}
+      <select name="role">{% for r in ('organizer', 'analyst', 'admin') %}<option value="{{ r }}">{{ t('role.' ~ r) }}</option>{% endfor %}</select>
+    </label>
+    <label>{{ t('users.lang') }}
+      <select name="lang"><option value="">{{ t('users.lang_auto') }}</option>{% for code in languages() %}<option value="{{ code }}">{{ t('lang.' ~ code) }}</option>{% endfor %}</select>
+    </label>
+    <button class="primary">{{ t('users.create') }}</button>
+  </form>
+  <div id="form-errors"></div>
+  <dl class="roles muted small">
+    {% for r in ('organizer', 'analyst', 'admin') %}<dt>{{ t('role.' ~ r) }}</dt><dd>{{ t('role.' ~ r ~ '.desc') }}</dd>{% endfor %}
+  </dl>
+</section>
+<section class="card">
+  <h2>{{ t('users.list_title') }}</h2>
+  <table class="list users">
+    <thead><tr><th>{{ t('login.username') }}</th><th>{{ t('users.role') }}</th><th>{{ t('users.created') }}</th><th></th></tr></thead>
+    <tbody id="user-rows">{% for u in users %}{% include "_user_row.html" %}{% endfor %}</tbody>
+  </table>
+</section>
+{% endif %}
+{% endblock %}

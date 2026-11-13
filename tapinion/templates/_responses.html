@@ -1,0 +1,26 @@
+{% macro rows_html() %}
+{% for row in rows %}
+<tr id="dp-{{ row.id }}">
+  <td class="muted">{{ row.created_at[:10] }}</td><td class="muted">{{ row.created_at[11:19] }}</td>
+  <td>{% if event.mode == 'nps' %}<b>{{ row.value }}</b>{% else %}<span class="dot {{ row.value }}"></span>{{ t('group.' ~ row.value) }}{% endif %}</td>
+  <td class="actions">
+    {% if can('responses.delete') %}
+    <button class="btn danger small" hx-post="/responses/{{ row.id }}/delete" hx-target="#dp-{{ row.id }}" hx-swap="outerHTML"
+            hx-confirm="{{ t('dashboard.delete_point_confirm', when=row.created_at) }}">{{ t('common.delete') }}</button>
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}
+{% if more %}
+<tr id="dp-more"><td colspan="4">
+  <button class="btn ghost" hx-get="/dashboard/responses?event_id={{ event.id }}&day={{ day }}&offset={{ next_offset }}" hx-target="#dp-more" hx-swap="outerHTML">{{ t('dashboard.more') }}</button>
+</td></tr>
+{% endif %}
+{% endmacro %}
+{% if not first %}{{ rows_html() }}
+{% elif rows %}
+<table class="list datapoints">
+  <thead><tr><th>{{ t('csv.date') }}</th><th>{{ t('csv.time') }}</th><th>{{ t('csv.value') }}</th><th></th></tr></thead>
+  <tbody>{{ rows_html() }}</tbody>
+</table>
+{% else %}<p class="muted">{{ t('dashboard.no_responses') }}</p>{% endif %}

@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tapinion"
+version = "1.0.0"
+description = "Tap your opinion: feedback kiosk with smileys or a 0–10 scale, evaluation, PDF reports and roles."
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "Markus Wilhelm" }]
+requires-python = ">=3.11"
+keywords = ["feedback", "kiosk", "survey", "nps", "smiley", "event", "htmx"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Framework :: FastAPI",
+  "Operating System :: OS Independent",
+  "Natural Language :: English",
+  "Natural Language :: German",
+]
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn>=0.30",
+  "jinja2>=3.1",
+  "python-multipart>=0.0.9",
+  "itsdangerous>=2.2",
+  "fpdf2>=2.8",
+  "qrcode>=7.4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.27", "Pillow>=10"]
+build = ["pyinstaller>=6.10"]
+
+[project.scripts]
+tapinion = "tapinion.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/mw-research/tapinion"
+Issues = "https://github.com/mw-research/tapinion/issues"
+
+[tool.setuptools.packages.find]
+include = ["tapinion*"]
+
+[tool.setuptools.package-data]
+tapinion = ["templates/*.html", "static/*", "static/icons/*", "locales/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"

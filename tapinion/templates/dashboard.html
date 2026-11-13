@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.dashboard') }} · {{ brand.name or 'Tapinion' }}{% endblock %}
+{% block content %}
+<div id="panel">{% include "_panel.html" %}</div>
+{% endblock %}

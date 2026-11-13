@@ -1,0 +1,31 @@
+{% if not e.active %}
+<div class="closed">
+  <h1>{{ t('kiosk.closed') }}</h1>
+  <p>{{ t('kiosk.closed_thanks') }}</p>
+</div>
+{% else %}
+<h1 class="question">{{ question_of(e, lang) }}</h1>
+<form class="vote {{ e.mode }}" hx-post="/k/{{ e.kiosk_token }}/vote" hx-target="#stage" hx-sync="this:drop" hx-disabled-elt="find button">
+  <input type="hidden" name="lang" value="{{ lang }}">
+  {% if e.mode == 'nps' %}
+  <div class="nps-row">
+    {% for i in range(11) %}
+    <button name="value" value="{{ i }}" class="nps-btn" style="--hue: {{ i * 12 }}">{{ i }}</button>
+    {% endfor %}
+  </div>
+  <div class="nps-scale"><span>{{ t('kiosk.nps_low') }}</span><span>{{ t('kiosk.nps_high') }}</span></div>
+  {% else %}
+  <div class="smiley-row">
+    {% for key, color, mouth in [('happy', 'var(--good)', 'M30 62 Q50 80 70 62'), ('neutral', 'var(--mid)', 'M30 68 L70 68'), ('unhappy', 'var(--bad)', 'M30 74 Q50 56 70 74')] %}
+    <button name="value" value="{{ key }}" class="smiley-btn" aria-label="{{ t('group.' ~ key) }}">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="46" fill="{{ color }}"/>
+        <circle cx="35" cy="38" r="6" fill="#1b1b1b"/><circle cx="65" cy="38" r="6" fill="#1b1b1b"/>
+        <path d="{{ mouth }}" stroke="#1b1b1b" stroke-width="6" fill="none" stroke-linecap="round"/>
+      </svg>
+    </button>
+    {% endfor %}
+  </div>
+  {% endif %}
+</form>
+{% endif %}

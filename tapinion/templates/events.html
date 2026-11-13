@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.events') }} · {{ brand.name or 'Tapinion' }}{% endblock %}
+{% block content %}
+{% if can('events.create') %}
+<section class="card">
+  <h1>{{ t('events.create_title') }}</h1>
+  <form class="event-form" hx-post="/events" hx-target="#event-rows" hx-swap="afterbegin"
+        hx-on::after-request="if (event.detail.successful && event.detail.elt === this) { this.reset(); document.getElementById('form-errors').innerHTML = ''; }">
+    <label class="wide">{{ t('events.name') }} <input name="name" required maxlength="120" placeholder="{{ t('events.name_placeholder') }}"></label>
+    <label>{{ t('events.date') }} <input name="event_date" type="date" value="{{ today }}" required></label>
+    <label>{{ t('events.mode') }}
+      <select name="mode">
+        <option value="smiley">{{ t('mode.smiley.short') }}</option>
+        <option value="nps">{{ t('mode.nps.short') }}</option>
+      </select>
+    </label>
+    <label>{{ t('events.pin') }} <input name="pin" inputmode="numeric" pattern="\d{4,8}" required placeholder="{{ t('events.pin_placeholder') }}" autocomplete="off"></label>
+    <label>{{ t('events.kiosk_lang') }}
+      <select name="kiosk_lang">{% for code in ('de', 'en') %}<option value="{{ code }}" {{ 'selected' if code == lang }}>{{ t('lang.' ~ code) }}</option>{% endfor %}</select>
+    </label>
+    <label class="wide">{{ t('events.question_de') }} <input name="question_de" maxlength="240" placeholder="{{ t('events.question_placeholder') }}"></label>
+    <label class="wide">{{ t('events.question_en') }} <input name="question_en" maxlength="240" placeholder="{{ t('events.question_placeholder') }}"></label>
+    <button class="primary">{{ t('events.create') }}</button>
+  </form>
+  <div id="form-errors"></div>
+  <p class="muted small">{{ t('events.create_hint') }}</p>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>{{ t('events.list_title' if can('events.view_all') else 'events.list_title_open') }}</h2>
+  <table class="list events">
+    <thead><tr><th>{{ t('events.date') }}</th><th>{{ t('events.name') }}</th><th>{{ t('events.mode') }}</th><th class="num">{{ t('events.responses') }}</th><th>{{ t('events.status') }}</th><th>{{ t('events.pin') }}</th><th></th></tr></thead>
+    <tbody id="event-rows">
+      {% for e in events %}{% include "_event_row.html" %}{% endfor %}
+    </tbody>
+  </table>
+  {% if not events %}<p class="muted">{{ t('dashboard.no_events') }}</p>{% endif %}
+</section>
+<div id="modal"></div>
+{% endblock %}

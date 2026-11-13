@@ -1,0 +1,21 @@
+<tr id="user-{{ u.id }}" class="{{ 'fresh' if flash is defined and flash }}">
+  <td>{{ u.username }}</td>
+  <td>
+    {% if u.id != user.id %}
+    <select name="role" aria-label="{{ t('users.role') }}" hx-post="/settings/users/{{ u.id }}/role" hx-target="#user-{{ u.id }}" hx-swap="outerHTML" hx-trigger="change">
+      {% for r in ('organizer', 'analyst', 'admin') %}<option value="{{ r }}" {{ 'selected' if r == u.role }}>{{ t('role.' ~ r) }}</option>{% endfor %}
+    </select>
+    {% else %}{{ t('role.' ~ u.role) }}{% endif %}
+  </td>
+  <td class="muted">{{ u.created_at[:10] }}</td>
+  <td class="actions">
+    {% if u.id != user.id %}
+    <form class="inline-pw" hx-post="/settings/users/{{ u.id }}/password" hx-target="#user-{{ u.id }}" hx-swap="outerHTML">
+      <input name="password" type="password" minlength="10" required autocomplete="new-password" placeholder="{{ t('users.new_password') }}" aria-label="{{ t('users.new_password') }}">
+      <button class="btn ghost small">{{ t('users.set_password') }}</button>
+    </form>
+    <button class="btn danger small" hx-post="/settings/users/{{ u.id }}/delete" hx-target="#user-{{ u.id }}" hx-swap="outerHTML"
+            hx-confirm="{{ t('users.delete_confirm', name=u.username) }}">{{ t('common.delete') }}</button>
+    {% else %}<span class="muted small">{{ t('users.you') }}</span>{% endif %}
+  </td>
+</tr>

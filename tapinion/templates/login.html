@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ t('login.title') }} · {{ brand.name or 'Tapinion' }}{% endblock %}
+{% block content %}
+<div class="login-grid {{ 'with-kiosks' if kiosks }}">
+  <section class="card">
+    <h1>{{ t('login.title') }}</h1>
+    <p class="muted">{{ t('login.intro') }}</p>
+    {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/login" class="stack">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="next" value="{{ next }}">
+      <label>{{ t('login.username') }} <input name="username" autocomplete="username" required autofocus></label>
+      <label>{{ t('login.password') }} <input name="password" type="password" autocomplete="current-password" required></label>
+      <button class="primary">{{ t('login.submit') }}</button>
+    </form>
+  </section>
+  {% if kiosks %}
+  <section class="card">
+    <h2>{{ t('login.kiosks_title') }}</h2>
+    <p class="muted">{{ t('login.kiosks_intro') }}</p>
+    <div class="kiosk-buttons">
+      {% for e in kiosks %}
+      <a class="kiosk-button" href="/k/{{ e.kiosk_token }}">
+        <span class="kb-name">{{ e.name }}</span>
+        <span class="kb-meta">{{ e.event_date }} · {{ t('mode.' ~ e.mode ~ '.short') }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

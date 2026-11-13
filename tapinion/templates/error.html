@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ t('error.title', code=code) }} · {{ brand.name or 'Tapinion' }}{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>{{ t('error.title', code=code) }}</h1>
+  <p>{{ detail }}</p>
+  <p><a href="/">{{ t('error.home') }}</a></p>
+</section>
+{% endblock %}

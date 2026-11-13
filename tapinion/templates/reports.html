@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.reports') }} · {{ brand.name or 'Tapinion' }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t('reports.overview_title') }}</h1>
+  <p class="muted">{{ t('reports.overview_intro') }}</p>
+  <form class="report-form" action="/reports/overview.pdf" method="get" target="_blank"
+        hx-get="/reports/preview" hx-trigger="change, input delay:300ms from:input[type=date]" hx-target="#preview">
+    <label>{{ t('reports.from') }} <input type="date" name="date_from"></label>
+    <label>{{ t('reports.to') }} <input type="date" name="date_to"></label>
+    <label>{{ t('reports.mode') }}
+      <select name="mode">
+        <option value="">{{ t('reports.mode_all') }}</option>
+        <option value="nps">{{ t('mode.nps.short') }}</option>
+        <option value="smiley">{{ t('mode.smiley.short') }}</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" name="details" value="1"> {{ t('reports.details') }}</label>
+    <button class="primary">{{ t('reports.create') }}</button>
+  </form>
+  <div id="preview" aria-live="polite">{% include "_report_preview.html" %}</div>
+</section>
+
+<section class="card">
+  <h2>{{ t('reports.single_title') }}</h2>
+  {% if events %}
+  <table class="list events">
+    <thead><tr><th>{{ t('events.date') }}</th><th>{{ t('events.name') }}</th><th>{{ t('events.mode') }}</th><th class="num">{{ t('events.responses') }}</th><th></th></tr></thead>
+    <tbody>
+      {% for e in events %}
+      <tr>
+        <td>{{ e.event_date }}</td>
+        <td><a href="/dashboard?event_id={{ e.id }}">{{ e.name }}</a></td>
+        <td>{{ t('mode.' ~ e.mode ~ '.short') }}</td>
+        <td class="num">{{ e.n_responses }}</td>
+        <td class="actions"><a class="btn ghost" href="/reports/event/{{ e.id }}.pdf" target="_blank" rel="noopener">PDF</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">{{ t('dashboard.no_events') }}</p>{% endif %}
+</section>
+{% endblock %}

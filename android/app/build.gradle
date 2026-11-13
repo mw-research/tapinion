@@ -1,0 +1,50 @@
+plugins {
+    id "com.android.application"
+}
+
+// Release signing comes from environment variables (CI secrets or a local keystore that is
+// never committed). Without them the release build is signed with the debug key.
+def ks = System.getenv("TAPINION_KEYSTORE")
+
+android {
+    namespace "io.github.mwresearch.tapinion"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "io.github.mwresearch.tapinion"
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        release {
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv("TAPINION_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("TAPINION_KEY_ALIAS") ?: "tapinion"
+                keyPassword System.getenv("TAPINION_KEY_PASSWORD") ?: System.getenv("TAPINION_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig ks ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation platform("org.jetbrains.kotlin:kotlin-bom:1.8.22")  // aligns the Kotlin stdlib parts
+    implementation "androidx.appcompat:appcompat:1.7.0"
+    implementation "androidx.webkit:webkit:1.12.1"
+    implementation "com.journeyapps:zxing-android-embedded:4.3.0"
+}

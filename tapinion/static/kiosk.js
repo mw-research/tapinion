@@ -1,0 +1,108 @@
+// Copyright (C) 2026 Markus Wilhelm, mw-research
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Kiosk helpers: keeps votes when the network drops (e.g. laptop Wi-Fi) and sends them
+// later with their original time; never gets stuck on a screen when the server is away;
+// keeps the screen awake where the browser allows it.
+(function () {
+  "use strict";
+  const shell = document.querySelector(".kiosk-shell[data-token]");
+  if (!shell) return;
+  const token = shell.dataset.token;
+  const KEY = "tapinion-queue-" + token;
+  const stage = document.getElementById("stage");
+  const pending = document.querySelector(".kiosk-pending");
+  let voteHtml = null;     // last voting form, to restore it without the server
+  let lastValue = null;    // value of the last tapped button
+  let flushing = false;
+
+  function remember() {
+    if (stage.querySelector("form.vote")) voteHtml = stage.innerHTML;
+  }
+  function restore() {
+    if (!voteHtml) return;
+    stage.innerHTML = voteHtml;
+    stage.querySelectorAll("button").forEach((b) => b.removeAttribute("disabled"));
+    htmx.process(stage);
+  }
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; }
+  }
+  function save(items) {
+    try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (e) { /* storage full or blocked */ }
+    if (pending) {
+      pending.hidden = items.length === 0;
+      pending.textContent = items.length ? "⟳ " + items.length : "";
+    }
+  }
+  function localTime() {
+    const d = new Date(), p = (n) => String(n).padStart(2, "0");
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) +
+      "T" + p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+  }
+
+  async function flush() {
+    if (flushing) return;
+    flushing = true;
+    try {
+      let items = load();
+      while (items.length) {
+        const item = items[0];
+        const body = new FormData();
+        body.append("value", item.value);
+        body.append("lang", item.lang);
+        body.append("ts", item.ts);
+        body.append("queued", "1");
+        let res;
+        try {
+          res = await fetch("/k/" + token + "/vote", { method: "POST", body: body, credentials: "same-origin" });
+        } catch (e) {
+          break; // still offline
+        }
+        if (res.status >= 500) break;
+        items.shift(); // stored, or rejected for good (4xx): drop it either way
+        save(items);
+      }
+    } finally {
+      flushing = false;
+    }
+  }
+
+  document.addEventListener("click", function (ev) {
+    const btn = ev.target.closest && ev.target.closest("form.vote button[name=value]");
+    if (btn) lastValue = btn.value;
+  }, true);
+
+  document.body.addEventListener("htmx:afterSwap", remember);
+
+  document.body.addEventListener("htmx:sendError", function (ev) {
+    const elt = ev.detail.elt;
+    const form = elt.closest && elt.closest("form.vote");
+    if (form && lastValue !== null) {
+      // the vote did not reach the server: keep it and thank the visitor anyway
+      const items = load();
+      items.push({ value: String(lastValue), lang: form.querySelector("[name=lang]").value, ts: localTime() });
+      lastValue = null;
+      save(items);
+      const tpl = document.getElementById("thanks-tpl");
+      if (tpl) stage.innerHTML = tpl.innerHTML;
+      setTimeout(restore, 4000);
+    } else if (stage.contains(elt) || elt === stage) {
+      // e.g. the voting form could not be reloaded after the thank-you screen
+      setTimeout(restore, 500);
+    }
+  });
+
+  window.addEventListener("online", flush);
+  setInterval(flush, 15000);
+  remember();
+  save(load());
+  flush();
+
+  // Keep the screen on (HTTPS or localhost only; the Android app does this natively).
+  async function wake() {
+    try { if ("wakeLock" in navigator) await navigator.wakeLock.request("screen"); } catch (e) { /* not allowed */ }
+  }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) wake(); });
+  wake();
+})();

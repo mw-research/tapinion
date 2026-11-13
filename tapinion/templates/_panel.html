@@ -1,0 +1,105 @@
+{% macro num(x, digits=1) %}{{ ('%.' ~ digits ~ 'f') | format(x) | replace('.', ',' if lang == 'de' else '.') }}{% endmacro %}
+{% if not event %}
+<section class="card">
+  <h1>{{ t('nav.dashboard') }}</h1>
+  <p class="muted">{{ t('dashboard.no_events') }}
+  {% if can('events.create') %}<a href="/events">{{ t('dashboard.create_first') }}</a>{% endif %}</p>
+</section>
+{% else %}
+<form class="filters" hx-get="/dashboard" hx-target="#panel" hx-trigger="change" hx-push-url="true" hx-indicator="#panel">
+  <label>{{ t('dashboard.event') }}
+    <select name="event_id">
+      {% for ev in events %}
+      <option value="{{ ev.id }}" {{ 'selected' if ev.id == event.id }}>{{ ev.event_date }} · {{ ev.name }} ({{ ev.n_responses }})</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>{{ t('dashboard.day') }}
+    <select name="day">
+      <option value="">{{ t('dashboard.all_days') }}</option>
+      {% for d in days %}<option value="{{ d }}" {{ 'selected' if d == day }}>{{ d }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="check"><input type="checkbox" name="live" value="1" {{ 'checked' if live }}> {{ t('dashboard.live') }}</label>
+  {% if can('export') %}
+  <a class="btn ghost" href="/dashboard/export.csv?event_id={{ event.id }}{% if day %}&day={{ day }}{% endif %}">CSV</a>
+  {% endif %}
+  {% if can('reports') %}
+  <a class="btn" href="/reports/event/{{ event.id }}.pdf{% if day %}?day={{ day }}{% endif %}" target="_blank" rel="noopener">{{ t('dashboard.pdf') }}</a>
+  {% endif %}
+</form>
+{% if live %}<div hx-get="/dashboard?event_id={{ event.id }}&day={{ day or '' }}&live=1" hx-trigger="every 10s" hx-target="#panel" hidden></div>{% endif %}
+
+<header class="panel-head">
+  <h1>{{ event.name }}</h1>
+  <p class="muted">{{ event.event_date }} · {{ t('mode.' ~ event.mode) }}
+    {% if not event.active %}· <span class="badge off">{{ t('events.closed') }}</span>{% endif %}<br>„{{ question_of(event, lang) }}“</p>
+</header>
+
+{% set r = result %}
+<div class="kpis">
+  <div class="kpi hero">
+    <span class="kpi-label">{{ t('score.' ~ event.mode) }}</span>
+    <span class="kpi-value {{ 'pos' if r.score is not none and r.score > 0 else ('neg' if r.score is not none and r.score < 0) }}">{{ '–' if r.score is none else ('%+d' % r.score if r.score else '0') }}</span>
+    <span class="kpi-sub">{{ t('score.scale') }}</span>
+  </div>
+  <div class="kpi"><span class="kpi-label">{{ t('dashboard.responses') }}</span><span class="kpi-value">{{ r.n }}</span></div>
+  {% if event.mode == 'nps' %}
+  <div class="kpi"><span class="kpi-label">{{ t('dashboard.mean') }}</span><span class="kpi-value">{{ '–' if r.mean is none else num(r.mean) }}</span><span class="kpi-sub">{{ t('dashboard.of_ten') }}</span></div>
+  {% endif %}
+</div>
+
+<div class="grid2">
+  <section class="card">
+    <h2>{{ t('dashboard.groups' if event.mode == 'nps' else 'dashboard.distribution') }}</h2>
+    <div class="stackbar" role="img" aria-label="{{ t('dashboard.shares') }}">
+      {% for g in r.groups %}{% if g.count %}<span class="seg {{ g.key }}" style="width: {{ g.share }}%"></span>{% endif %}{% endfor %}
+    </div>
+    <table class="groups">
+      {% for g in r.groups %}
+      <tr><td><span class="dot {{ g.key }}"></span>{{ t('group.' ~ g.key) }}</td><td class="num">{{ g.count }}</td><td class="num">{{ num(g.share) }} %</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+
+  {% if event.mode == 'nps' %}
+  <section class="card">
+    <h2>{{ t('dashboard.values') }}</h2>
+    {% set peak = (r.distribution | map(attribute='count') | max) or 1 %}
+    <div class="cols">
+      {% for d in r.distribution %}
+      <div class="col" title="{{ d.value }}: {{ d.count }}">
+        <span class="col-n">{{ d.count or '' }}</span>
+        <span class="col-bar {{ 'promoters' if d.value >= 9 else ('passives' if d.value >= 7 else 'detractors') }}" style="height: {{ (d.count / peak * 100) | round(1) }}%"></span>
+        <span class="col-x">{{ d.value }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% elif can('dashboard.details') %}
+  <section class="card">
+    <h2>{{ t('dashboard.hourly') }}</h2>
+    {% include "_hourly.html" %}
+  </section>
+  {% endif %}
+</div>
+
+{% if can('dashboard.details') %}
+<div class="grid2">
+  {% if event.mode == 'nps' %}
+  <section class="card">
+    <h2>{{ t('dashboard.hourly') }}</h2>
+    {% include "_hourly.html" %}
+  </section>
+  {% endif %}
+  <section class="card {{ 'span2' if event.mode != 'nps' }}">
+    <h2>{{ t('dashboard.datapoints') }}</h2>
+    <div id="datapoints" hx-get="/dashboard/responses?event_id={{ event.id }}&day={{ day or '' }}" hx-trigger="load, responses-changed from:body" hx-swap="innerHTML">
+      <p class="muted">…</p>
+    </div>
+  </section>
+</div>
+{% else %}
+<p class="muted small">{{ t('dashboard.aggregate_only') }}</p>
+{% endif %}
+{% endif %}

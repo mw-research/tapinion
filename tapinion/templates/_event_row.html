@@ -1,0 +1,29 @@
+<tr id="event-{{ e.id }}" class="{{ 'fresh' if flash }}">
+  <td>{{ e.event_date }}</td>
+  <td><a href="/dashboard?event_id={{ e.id }}">{{ e.name }}</a>
+    {% if flash and flash != 'new' %}<div class="note">{{ flash }}</div>{% endif %}</td>
+  <td>{{ t('mode.' ~ e.mode ~ '.short') }}</td>
+  <td class="num">{{ e.n_responses }}</td>
+  <td>
+    {% if can('events.edit') %}
+    <button class="badge {{ 'on' if e.active else 'off' }}" hx-post="/events/{{ e.id }}/toggle" hx-target="#event-{{ e.id }}" hx-swap="outerHTML"
+            title="{{ t('events.toggle_hint') }}">{{ t('events.open' if e.active else 'events.closed') }}</button>
+    {% else %}<span class="badge {{ 'on' if e.active else 'off' }}">{{ t('events.open' if e.active else 'events.closed') }}</span>{% endif %}
+  </td>
+  <td id="pin-{{ e.id }}">{% include "_event_pin.html" %}</td>
+  <td class="actions">
+    {% if can('kiosk.start') and e.active %}
+    <a class="btn" href="/events/{{ e.id }}/kiosk" onclick="return confirm({{ t('events.start_confirm') | tojson | forceescape }})">{{ t('events.start') }}</a>
+    <button class="btn ghost" hx-get="/events/{{ e.id }}/qr" hx-target="#modal">{{ t('events.qr') }}</button>
+    {% endif %}
+    {% if can('events.edit') %}
+    <button class="btn ghost" hx-get="/events/{{ e.id }}/edit" hx-target="#event-{{ e.id }}" hx-swap="outerHTML">{{ t('common.edit') }}</button>
+    <button class="btn ghost" hx-post="/events/{{ e.id }}/relink" hx-target="#event-{{ e.id }}" hx-swap="outerHTML"
+            hx-confirm="{{ t('events.relink_confirm') }}">{{ t('events.relink') }}</button>
+    {% endif %}
+    {% if can('events.delete') %}
+    <button class="btn danger" hx-post="/events/{{ e.id }}/delete" hx-target="#event-{{ e.id }}" hx-swap="outerHTML"
+            hx-confirm="{{ t('events.delete_confirm', name=e.name, n=e.n_responses) }}">{{ t('common.delete') }}</button>
+    {% endif %}
+  </td>
+</tr>

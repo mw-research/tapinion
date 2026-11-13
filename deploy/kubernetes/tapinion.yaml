@@ -1,0 +1,85 @@
+# Tapinion on Kubernetes: one pod (SQLite), data on a volume, Ingress with TLS.
+# Replace the values marked CHANGE-ME, then: kubectl apply -f tapinion.yaml
+#
+# Secret first (values never in this file):
+#   kubectl -n tapinion create secret generic tapinion \
+#     --from-literal=SECRET_KEY="$(openssl rand -base64 48)" \
+#     --from-literal=SETUP_TOKEN="$(openssl rand -hex 16)"
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tapinion
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tapinion-data
+  namespace: tapinion
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tapinion
+  namespace: tapinion
+  labels: {app: tapinion}
+spec:
+  replicas: 1                 # SQLite: exactly one pod
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: tapinion}
+  template:
+    metadata:
+      labels: {app: tapinion}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000}
+      containers:
+        - name: tapinion
+          image: ghcr.io/mw-research/tapinion:1.0.0
+          ports: [{containerPort: 8000}]
+          envFrom: [{secretRef: {name: tapinion}}]
+          env:
+            - {name: COOKIE_SECURE, value: "1"}
+            - {name: PUBLIC_URL, value: "https://feedback.example.org"}   # CHANGE-ME
+            - {name: SQLITE_WAL, value: "1"}                              # "0" on NFS storage
+          resources:
+            requests: {cpu: 20m, memory: 96Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          readinessProbe: {httpGet: {path: /healthz, port: 8000}, initialDelaySeconds: 3}
+          livenessProbe: {httpGet: {path: /healthz, port: 8000}, initialDelaySeconds: 20, periodSeconds: 30}
+          volumeMounts: [{name: data, mountPath: /data}]
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: tapinion-data}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tapinion
+  namespace: tapinion
+spec:
+  selector: {app: tapinion}
+  ports: [{port: 80, targetPort: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tapinion
+  namespace: tapinion
+spec:
+  ingressClassName: CHANGE-ME          # e.g. traefik or nginx
+  rules:
+    - host: feedback.example.org       # CHANGE-ME
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: tapinion, port: {number: 80}}}
+  tls:
+    - hosts: [feedback.example.org]    # CHANGE-ME
+      secretName: tapinion-tls

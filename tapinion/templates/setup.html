@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ t('setup.title') }} · Tapinion{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>{{ t('setup.title') }}</h1>
+  {% if not allowed %}
+  <div class="alert" role="alert">{{ t('setup.not_allowed') }}</div>
+  <p class="muted">{{ t('setup.not_allowed_hint') }}</p>
+  {% else %}
+  <p class="muted">{{ t('setup.intro') }}</p>
+  {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/setup" class="stack">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="token" value="{{ token }}">
+    <label>{{ t('setup.brand_name') }} <input name="brand_name" maxlength="60" placeholder="Tapinion"></label>
+    <label>{{ t('setup.username') }} <input name="username" value="admin" autocomplete="username" required></label>
+    <label>{{ t('setup.password', n=10) }} <input name="password" type="password" minlength="10" autocomplete="new-password" required></label>
+    <label>{{ t('setup.password2') }} <input name="password2" type="password" minlength="10" autocomplete="new-password" required></label>
+    <label>{{ t('setup.lang') }}
+      <select name="lang">{% for code in languages() %}<option value="{{ code }}" {{ 'selected' if code == lang }}>{{ t('lang.' ~ code) }}</option>{% endfor %}</select>
+    </label>
+    <button class="primary">{{ t('setup.submit') }}</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

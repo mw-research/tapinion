@@ -1,0 +1,12 @@
+.git
+.github
+.env
+data
+dist
+build
+android
+packaging
+tests
+tools
+*.log
+**/__pycache__

@@ -1,0 +1,11 @@
+{% if hourly %}
+<div class="cols small">
+  {% for h in hourly %}
+  <div class="col" title="{{ h.hour }}: {{ h.count }}">
+    <span class="col-n">{{ h.count or '' }}</span>
+    <span class="col-bar time-bar" style="height: {{ (h.rel * 100) | round(1) }}%"></span>
+    <span class="col-x">{{ h.hour }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% else %}<p class="muted">{{ t('dashboard.no_responses') }}</p>{% endif %}

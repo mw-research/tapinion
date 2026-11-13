@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="htmx-config" content='{"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"[45]..","swap":true,"error":true}]}'>
+  <meta name="theme-color" content="{{ brand.primary }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="{{ brand.name or 'Tapinion' }}">
+  <title>{% block title %}{{ brand.name or 'Tapinion' }}{% endblock %}</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/static/icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/style.css?v={{ version }}">
+  <style>:root { --brand: {{ brand.primary }}; --on-brand: {{ brand.on_primary }}; --accent: {{ brand.accent }}; --on-accent: {{ brand.on_accent }}; }</style>
+  <script src="/static/htmx.min.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block bodyclass %}app{% endblock %}" hx-headers='{"X-CSRF-Token": "{{ csrf }}"}'>
+{% block shell %}
+  <header class="topbar">
+    <a class="brand" href="/"><img src="{{ brand.logo_url }}" alt="" class="brand-logo">{% if brand.name %}<span>{{ brand.name }}</span>{% endif %}</a>
+    {% if user %}
+    <nav aria-label="{{ t('nav.label') }}">
+      {% set path = request.url.path %}
+      <a href="/dashboard" class="{{ 'on' if path.startswith('/dashboard') }}">{{ t('nav.dashboard') }}</a>
+      {% if can('reports') %}<a href="/reports" class="{{ 'on' if path.startswith('/reports') }}">{{ t('nav.reports') }}</a>{% endif %}
+      <a href="/events" class="{{ 'on' if path.startswith('/events') }}">{{ t('nav.events') }}</a>
+      {% if can('settings.manage') %}<a href="/settings" class="{{ 'on' if path.startswith('/settings') }}">{{ t('nav.settings') }}</a>{% endif %}
+    </nav>
+    {% endif %}
+    <div class="who">
+      {% include "_lang_switch.html" %}
+      {% if user %}
+      <a href="/account" title="{{ t('nav.account') }}">{{ user.username }}</a>
+      <span class="role">{{ t('role.' ~ user.role) }}</span>
+      <form method="post" action="/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link">{{ t('nav.logout') }}</button></form>
+      {% endif %}
+    </div>
+  </header>
+  <main class="wrap">{% block content %}{% endblock %}</main>
+  <footer class="appfoot">Tapinion {{ version }} · <a href="https://github.com/mw-research/tapinion" rel="noopener">{{ t('footer.source') }}</a> · AGPL-3.0</footer>
+{% endblock %}
+  <div id="toasts" aria-live="polite"></div>
+</body>
+</html>

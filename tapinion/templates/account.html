@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ t('account.title') }} · {{ brand.name or 'Tapinion' }}{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>{{ t('account.title') }}</h1>
+  <p class="muted">{{ user.username }} · {{ t('role.' ~ user.role) }}</p>
+  {% if message %}<div class="alert ok" role="status">{{ message }}</div>{% endif %}
+  {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/account" class="stack">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>{{ t('account.old') }} <input name="old" type="password" autocomplete="current-password" required></label>
+    <label>{{ t('account.new', n=10) }} <input name="new" type="password" minlength="10" autocomplete="new-password" required></label>
+    <button class="primary">{{ t('account.submit') }}</button>
+  </form>
+</section>
+{% endblock %}

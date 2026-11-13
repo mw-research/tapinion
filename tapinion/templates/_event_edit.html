@@ -1,0 +1,25 @@
+<tr id="event-{{ e.id }}" class="editing">
+  <td colspan="7">
+    <form class="event-form" hx-post="/events/{{ e.id }}" hx-target="#event-{{ e.id }}" hx-swap="outerHTML">
+      <label class="wide">{{ t('events.name') }} <input name="name" required maxlength="120" value="{{ e.name }}"></label>
+      <label>{{ t('events.date') }} <input name="event_date" type="date" value="{{ e.event_date }}" required></label>
+      <label>{{ t('events.mode') }}
+        <select name="mode" {% if e.n_responses %}title="{{ t('events.error_mode_locked') }}"{% endif %}>
+          {% for m in ('smiley', 'nps') %}
+          {% if not e.n_responses or m == e.mode %}<option value="{{ m }}" {{ 'selected' if m == e.mode }}>{{ t('mode.' ~ m ~ '.short') }}</option>{% endif %}
+          {% endfor %}
+        </select>
+      </label>
+      <label>{{ t('events.kiosk_lang') }}
+        <select name="kiosk_lang">{% for code in ('de', 'en') %}<option value="{{ code }}" {{ 'selected' if code == e.kiosk_lang }}>{{ t('lang.' ~ code) }}</option>{% endfor %}</select>
+      </label>
+      <label class="wide">{{ t('events.question_de') }} <input name="question_de" maxlength="240" value="{{ e.question_de }}" placeholder="{{ t('events.question_placeholder') }}"></label>
+      <label class="wide">{{ t('events.question_en') }} <input name="question_en" maxlength="240" value="{{ e.question_en }}" placeholder="{{ t('events.question_placeholder') }}"></label>
+      <div class="form-actions">
+        <button class="primary">{{ t('common.save') }}</button>
+        <button type="button" class="btn ghost" hx-get="/events/{{ e.id }}/row" hx-target="#event-{{ e.id }}" hx-swap="outerHTML">{{ t('common.cancel') }}</button>
+      </div>
+    </form>
+    <div id="edit-errors-{{ e.id }}"></div>
+  </td>
+</tr>
