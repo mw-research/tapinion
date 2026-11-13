@@ -18,6 +18,7 @@ datas = [
 hidden = (
     collect_submodules("uvicorn")
     + collect_submodules("tapinion")
+    + collect_submodules("zeroconf")
     + ["fpdf", "qrcode.image.svg", "multipart", "python_multipart", "itsdangerous"]
 )
 

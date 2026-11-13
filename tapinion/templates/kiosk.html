@@ -14,6 +14,8 @@
                 hx-on::after-request="document.querySelectorAll('.kiosk-lang button').forEach(b => b.classList.toggle('on', b === this))">{{ code | upper }}</button>
         {% endfor %}
       </nav>
+      <button class="kiosk-full" hidden aria-label="{{ t('kiosk.fullscreen') }}" title="{{ t('kiosk.fullscreen') }}"
+              onclick="document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()">⛶</button>
       <button class="kiosk-exit" aria-label="{{ t('kiosk.exit') }}" hx-get="/k/{{ e.kiosk_token }}/exit?lang={{ lang }}" hx-target="#stage">⋯</button>
     </div>
   </header>

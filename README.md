@@ -46,9 +46,14 @@ unless you choose to delete it.
 **Tablets** (same Wi-Fi as the computer):
 
 - **Android**: install `tapinion-android-….apk` from the releases (allow "install unknown apps"
-  once), tap *Scan QR code*, enter the event's PIN. The app runs full screen, keeps the screen on
+  once). The app finds the computer in the Wi-Fi by itself – tap it, or tap *Scan QR code* –
+  then enter the event's PIN. The app runs full screen, keeps the screen on
   and pins itself while the kiosk runs.
-- **iPad / iPhone**: scan the QR code with the camera, enter the PIN, then *Share → Add to Home
+- **The computer itself**: *Kiosk on this computer* in the Tapinion window opens the rating screen
+  full screen in its own browser window (Edge on Windows; Chrome or Edge on macOS/Linux), while you
+  stay logged in in your normal browser.
+- **iPad / iPhone** (no app needed; an App Store app would require Apple's paid developer program):
+  scan the QR code with the camera, enter the PIN, then *Share → Add to Home
   Screen*. For a locked-down kiosk: *Settings → Accessibility → Guided Access*.
 
 Data lives in the user's application folder (`%APPDATA%\Tapinion`, `~/Library/Application Support/Tapinion`,

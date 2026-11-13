@@ -47,6 +47,9 @@ def main():
                          "mipmap-xxhdpi": 144, "mipmap-xxxhdpi": 192}.items():
         (res / folder).mkdir(parents=True, exist_ok=True)
         draw_mark(size, background=WHITE + (255,), pad=0.1).save(res / folder / "ic_launcher.png")
+    nodpi = res / "drawable-nodpi"
+    nodpi.mkdir(parents=True, exist_ok=True)
+    draw_mark(288).save(nodpi / "logo_mark.png")  # transparent, for the app's start screen
     print("icons written")
 
 

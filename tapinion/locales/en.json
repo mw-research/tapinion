@@ -265,9 +265,10 @@
   "wizard.howto_ipad_title": "iPad / iPhone:",
   "wizard.howto_ipad": "scan the code with the camera, enter the PIN, then Share → “Add to Home Screen” for full screen.",
   "wizard.howto_here_title": "This computer:",
-  "wizard.howto_here": "“Start kiosk here” turns this screen into the kiosk (you will be logged out).",
+  "wizard.howto_here": "in the Tapinion window click “Kiosk on this computer” – the rating screen opens full screen, e.g. on a laptop at the entrance. Or “Start kiosk here” below.",
   "wizard.tablet_network": "The tablet must be in the same Wi-Fi as this computer. If it cannot connect, allow Tapinion in the firewall (private networks).",
   "wizard.tablet_later": "You skipped the event. Under Events you can create one any time and show its QR code.",
   "wizard.start_here": "Start kiosk here",
-  "settings.wizard_again": "Open the setup assistant again"
+  "settings.wizard_again": "Open the setup assistant again",
+  "kiosk.fullscreen": "Full screen"
 }

@@ -120,6 +120,10 @@ def main():
     local = f"http://localhost:{port}"
     ip = lan_ip()
     lan = f"http://{ip}:{port}" if ip else None
+    from . import __version__
+    from .discovery import announce
+
+    withdraw = announce(port, ip, __version__)  # lets the Android app find this computer
     headless = os.environ.get("TAPINION_HEADLESS") == "1"  # servers, tests: no window, no browser
     if not headless:
         webbrowser.open(local)
@@ -138,8 +142,50 @@ def main():
                 time.sleep(0.5)
         except KeyboardInterrupt:
             pass
+    withdraw()
     server.should_exit = True
     thread.join(timeout=5)
+
+
+def kiosk_browser_command(url: str, folder: Path) -> list[str] | None:
+    """A full-screen browser window for the kiosk, with its own profile, so the normal browser
+    stays logged in for the results. None if no suitable browser is installed."""
+    import shutil
+
+    profile = str(folder / "kiosk-browser")
+    candidates = []
+    if sys.platform == "win32":
+        for base in (os.environ.get("ProgramFiles(x86)"), os.environ.get("ProgramFiles"), os.environ.get("LOCALAPPDATA")):
+            if base:
+                candidates += [Path(base) / "Microsoft" / "Edge" / "Application" / "msedge.exe",
+                               Path(base) / "Google" / "Chrome" / "Application" / "chrome.exe"]
+    elif sys.platform == "darwin":
+        candidates += [Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+                       Path("/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"),
+                       Path("/Applications/Chromium.app/Contents/MacOS/Chromium")]
+    else:
+        candidates += [Path(p) for p in (shutil.which("google-chrome"), shutil.which("chromium"),
+                                         shutil.which("chromium-browser"), shutil.which("microsoft-edge")) if p]
+    for exe in candidates:
+        if exe.is_file():
+            cmd = [str(exe), "--kiosk", url, f"--user-data-dir={profile}", "--no-first-run",
+                   "--no-default-browser-check", "--disable-pinch", "--overscroll-history-navigation=0"]
+            if exe.name.lower().startswith("msedge"):
+                cmd.append("--edge-kiosk-type=fullscreen")
+            return cmd
+    return None
+
+
+def open_kiosk_here(local: str, folder: Path) -> bool:
+    """Open the login page (with the open events) as a full-screen kiosk on this computer."""
+    import subprocess
+
+    cmd = kiosk_browser_command(f"{local}/login", folder)
+    if cmd:
+        subprocess.Popen(cmd, close_fds=True)
+        return True
+    webbrowser.open(f"{local}/login")
+    return False
 
 
 def _window(local, lan, folder, server):
@@ -150,20 +196,29 @@ def _window(local, lan, folder, server):
     if sys.platform == "win32":
         import locale
         de = (locale.getdefaultlocale()[0] or "").lower().startswith("de")
+    quit_keys = "Cmd+Q" if sys.platform == "darwin" else "Alt+F4"
     txt = {
         "running": "Tapinion läuft." if de else "Tapinion is running.",
-        "here": "Auf diesem Rechner:" if de else "On this computer:",
-        "lan": "Tablets im selben Netz:" if de else "Tablets in the same network:",
-        "nolan": "Kein Netzwerk gefunden – nur auf diesem Rechner erreichbar." if de else
-                 "No network found – reachable on this computer only.",
-        "data": "Daten:" if de else "Data:",
-        "open": "Im Browser öffnen" if de else "Open in browser",
+        "admin": "Verwaltung und Auswertung" if de else "Administration and results",
+        "open": "Tapinion öffnen" if de else "Open Tapinion",
+        "kiosk": "Kiosk auf diesem Rechner" if de else "Kiosk on this computer",
+        "kiosk_hint": (f"Öffnet die Bewertung im Vollbild, z. B. für einen Laptop am Eingang. "
+                       f"Veranstaltung wählen, PIN eingeben. Vollbild beenden: {quit_keys}.") if de else
+                      (f"Opens the rating screen full screen, e.g. for a laptop at the entrance. "
+                       f"Choose the event, enter the PIN. Leave full screen: {quit_keys}."),
+        "no_kiosk_browser": ("Kein Browser mit Kiosk-Modus gefunden – geöffnet im normalen Browser. "
+                             "Vollbild mit F11 (Mac: Ctrl+Cmd+F).") if de else
+                            ("No browser with kiosk mode found – opened in the normal browser. "
+                             "Full screen with F11 (Mac: Ctrl+Cmd+F)."),
+        "tablets": "Tablets und Smartphones" if de else "Tablets and smartphones",
+        "tablets_hint": ("Im selben WLAN: Android-App findet diesen Rechner selbst, sonst den QR-Code "
+                         "unter Veranstaltungen scannen. Adresse:") if de else
+                        ("In the same Wi-Fi: the Android app finds this computer by itself, otherwise "
+                         "scan the QR code under Events. Address:"),
+        "nolan": "kein Netzwerk – nur auf diesem Rechner erreichbar" if de else
+                 "no network – reachable on this computer only",
         "folder": "Datenordner" if de else "Data folder",
-        "quit": "Beenden" if de else "Quit",
-        "hint": "Beim ersten Start fragt die Firewall, ob Tapinion im Netzwerk erreichbar sein darf – "
-                "für Tablets mit „Zulassen“ (private Netzwerke) bestätigen." if de else
-                "On first start the firewall asks whether Tapinion may be reachable in the network – "
-                "allow it (private networks) so tablets can connect.",
+        "quit": "Tapinion beenden" if de else "Quit Tapinion",
     }
 
     root = tk.Tk()
@@ -174,21 +229,35 @@ def _window(local, lan, folder, server):
         root.iconphoto(True, tk.PhotoImage(file=str(icon)))
     except Exception:
         pass
-    frm = ttk.Frame(root, padding=18)
+    style = ttk.Style(root)
+    style.configure("Big.TButton", font=("TkDefaultFont", 11, "bold"), padding=(14, 8))
+    muted = "#5c6878"
+    frm = ttk.Frame(root, padding=20)
     frm.grid()
-    ttk.Label(frm, text=txt["running"], font=("TkDefaultFont", 13, "bold")).grid(column=0, row=0, columnspan=2, sticky="w")
-    ttk.Label(frm, text=txt["here"]).grid(column=0, row=1, sticky="w", pady=(10, 0))
-    ttk.Label(frm, text=local, font=("TkFixedFont", 11)).grid(column=1, row=1, sticky="w", pady=(10, 0), padx=(8, 0))
-    ttk.Label(frm, text=txt["lan"]).grid(column=0, row=2, sticky="w")
-    ttk.Label(frm, text=lan or txt["nolan"], font=("TkFixedFont", 11) if lan else None).grid(column=1, row=2, sticky="w", padx=(8, 0))
-    ttk.Label(frm, text=txt["data"]).grid(column=0, row=3, sticky="w")
-    ttk.Label(frm, text=str(folder)).grid(column=1, row=3, sticky="w", padx=(8, 0))
-    ttk.Label(frm, text=txt["hint"], wraplength=440, foreground="#5c6878").grid(column=0, row=4, columnspan=2, sticky="w", pady=(10, 0))
+    ttk.Label(frm, text=txt["running"], font=("TkDefaultFont", 14, "bold")).grid(row=0, column=0, sticky="w")
+
+    ttk.Label(frm, text=txt["admin"], font=("TkDefaultFont", 10, "bold")).grid(row=1, column=0, sticky="w", pady=(16, 4))
+    ttk.Button(frm, text=txt["open"], style="Big.TButton", command=lambda: webbrowser.open(local)).grid(row=2, column=0, sticky="we")
+
+    ttk.Label(frm, text=txt["kiosk"], font=("TkDefaultFont", 10, "bold")).grid(row=3, column=0, sticky="w", pady=(16, 4))
+    status = ttk.Label(frm, text=txt["kiosk_hint"], wraplength=420, foreground=muted)
+
+    def kiosk():
+        if not open_kiosk_here(local, folder):
+            status.configure(text=txt["no_kiosk_browser"])
+
+    ttk.Button(frm, text=txt["kiosk"], style="Big.TButton", command=kiosk).grid(row=4, column=0, sticky="we")
+    status.grid(row=5, column=0, sticky="w", pady=(4, 0))
+
+    ttk.Label(frm, text=txt["tablets"], font=("TkDefaultFont", 10, "bold")).grid(row=6, column=0, sticky="w", pady=(16, 4))
+    ttk.Label(frm, text=txt["tablets_hint"], wraplength=420, foreground=muted).grid(row=7, column=0, sticky="w")
+    ttk.Label(frm, text=lan or txt["nolan"], font=("TkFixedFont", 11)).grid(row=8, column=0, sticky="w", pady=(2, 0))
+
     btns = ttk.Frame(frm)
-    btns.grid(column=0, row=5, columnspan=2, sticky="e", pady=(14, 0))
-    ttk.Button(btns, text=txt["open"], command=lambda: webbrowser.open(local)).grid(column=0, row=0, padx=4)
-    ttk.Button(btns, text=txt["folder"], command=lambda: _open_folder(folder)).grid(column=1, row=0, padx=4)
-    ttk.Button(btns, text=txt["quit"], command=root.destroy).grid(column=2, row=0, padx=4)
+    btns.grid(row=9, column=0, sticky="we", pady=(18, 0))
+    btns.columnconfigure(0, weight=1)
+    ttk.Button(btns, text=txt["folder"], command=lambda: _open_folder(folder)).grid(row=0, column=0, sticky="w")
+    ttk.Button(btns, text=txt["quit"], command=root.destroy).grid(row=0, column=1, sticky="e")
 
     def watch():
         if server.should_exit:

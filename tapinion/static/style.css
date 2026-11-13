@@ -255,3 +255,5 @@ body.kiosk {
 .tablet-grid .qr svg { width: 100%; }
 .pin-reminder { font-size: 1.2rem; font-weight: 650; letter-spacing: .05em; margin: .3rem 0 0; }
 .howto { margin: 0; padding-left: 1.2rem; display: grid; gap: .7rem; }
+.kiosk-full { border: 1px solid #dde3ea; background: #fff; color: #5c6878; font-size: 1.3rem; width: 44px; height: 40px; border-radius: 8px; }
+.kiosk-full.on { background: var(--brand); color: var(--on-brand); }

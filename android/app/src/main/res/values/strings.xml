@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Tapinion</string>
-    <string name="setup_title">Connect Tapinion</string>
-    <string name="setup_intro">Scan the QR code shown next to an event in Tapinion (Events → QR code), or enter the address of the computer running Tapinion. The tablet must be in the same network.</string>
+    <string name="setup_intro">Connect this device to Tapinion on your computer. Scan the QR code shown in Tapinion – or pick it below.</string>
     <string name="setup_scan">Scan QR code</string>
     <string name="setup_scan_prompt">Point the camera at the Tapinion QR code</string>
-    <string name="setup_or">or enter the address:</string>
+    <string name="found_title">IN YOUR WI-FI</string>
+    <string name="searching">Looking for Tapinion in this Wi-Fi …</string>
+    <string name="found_on">Tapinion on %1$s</string>
+    <string name="connect_short">Connect</string>
+    <string name="setup_manual">Enter the address by hand</string>
+    <string name="setup_address_hint">Address, e.g. 192.168.0.10:8765</string>
     <string name="setup_connect">Connect</string>
     <string name="setup_pin_app">Pin the app while a kiosk is running</string>
     <string name="setup_invalid">This is not a valid address.</string>
-    <string name="setup_about">Tapinion – tap your opinion. Free software (AGPL-3.0), © Markus Wilhelm, mw-research.</string>
-    <string name="offline">Tapinion is not reachable at\n%1$s\n\nIs the computer running Tapinion switched on and in the same network? Trying again automatically…</string>
+    <string name="setup_about">Tapinion – tap your opinion · Free software (AGPL-3.0) · © Markus Wilhelm, mw-research</string>
+    <string name="offline">Tapinion is not reachable at %1$s.\n\nIs the computer running Tapinion switched on and in the same Wi-Fi? Trying again automatically …</string>
     <string name="retry">Try again</string>
-    <string name="change_server">Change address</string>
-    <string name="change_server_question">Connect to another Tapinion address?</string>
+    <string name="change_server">Choose another connection</string>
+    <string name="change_server_question">Connect to another Tapinion?</string>
 </resources>

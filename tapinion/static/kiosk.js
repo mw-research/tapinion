@@ -99,6 +99,10 @@
   save(load());
   flush();
 
+  const full = document.querySelector(".kiosk-full");
+  if (full && document.fullscreenEnabled && !window.matchMedia("(display-mode: fullscreen)").matches) full.hidden = false;
+  document.addEventListener("fullscreenchange", function () { if (full) full.classList.toggle("on", !!document.fullscreenElement); });
+
   // Keep the screen on (HTTPS or localhost only; the Android app does this natively).
   async function wake() {
     try { if ("wakeLock" in navigator) await navigator.wakeLock.request("screen"); } catch (e) { /* not allowed */ }

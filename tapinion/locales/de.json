@@ -265,9 +265,10 @@
   "wizard.howto_ipad_title": "iPad / iPhone:",
   "wizard.howto_ipad": "Code mit der Kamera scannen, PIN eingeben, dann Teilen → „Zum Home-Bildschirm“ für Vollbild.",
   "wizard.howto_here_title": "Dieser Rechner:",
-  "wizard.howto_here": "„Kiosk hier starten“ macht diesen Bildschirm zum Kiosk (Sie werden dabei abgemeldet).",
+  "wizard.howto_here": "im Tapinion-Fenster „Kiosk auf diesem Rechner“ klicken – die Bewertung öffnet sich im Vollbild, etwa auf einem Laptop am Eingang. Oder unten „Kiosk hier starten“.",
   "wizard.tablet_network": "Das Tablet muss im selben WLAN sein wie dieser Rechner. Klappt die Verbindung nicht, Tapinion in der Firewall erlauben (private Netzwerke).",
   "wizard.tablet_later": "Sie haben die Veranstaltung übersprungen. Unter Veranstaltungen legen Sie jederzeit eine an und zeigen ihren QR-Code.",
   "wizard.start_here": "Kiosk hier starten",
-  "settings.wizard_again": "Einrichtungsassistent erneut öffnen"
+  "settings.wizard_again": "Einrichtungsassistent erneut öffnen",
+  "kiosk.fullscreen": "Vollbild"
 }

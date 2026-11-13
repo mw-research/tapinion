@@ -47,9 +47,14 @@ bleiben erhalten, außer Sie wählen das Löschen.
 **Tablets** (im selben WLAN wie der Rechner):
 
 - **Android**: `tapinion-android-….apk` aus den Releases installieren (einmalig „Installation
-  unbekannter Apps“ erlauben), *QR-Code scannen* antippen, PIN der Veranstaltung eingeben. Die App
+  unbekannter Apps“ erlauben). Die App findet den Rechner im WLAN selbst – antippen, oder
+  *QR-Code scannen* –, dann die PIN der Veranstaltung eingeben. Die App
   läuft im Vollbild, hält den Bildschirm an und heftet sich an, solange der Kiosk läuft.
-- **iPad / iPhone**: QR-Code mit der Kamera scannen, PIN eingeben, dann *Teilen → Zum
+- **Der Rechner selbst**: *Kiosk auf diesem Rechner* im Tapinion-Fenster öffnet die Bewertung im
+  Vollbild in einem eigenen Browserfenster (Edge unter Windows; Chrome oder Edge unter macOS/Linux);
+  im normalen Browser bleiben Sie für die Auswertung angemeldet.
+- **iPad / iPhone** (keine App nötig; eine App-Store-App setzt Apples kostenpflichtiges
+  Entwicklerprogramm voraus): QR-Code mit der Kamera scannen, PIN eingeben, dann *Teilen → Zum
   Home-Bildschirm*. Für einen abgesicherten Kiosk: *Einstellungen → Bedienungshilfen → Geführter Zugriff*.
 
 Die Daten liegen im Anwendungsordner des Benutzers (`%APPDATA%\Tapinion`,
