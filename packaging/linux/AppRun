@@ -1,0 +1,4 @@
+#!/bin/sh
+# AppImage entry point: start the bundled Tapinion desktop app.
+HERE="$(dirname "$(readlink -f "$0")")"
+exec "$HERE/usr/lib/tapinion/Tapinion" "$@"

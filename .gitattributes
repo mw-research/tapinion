@@ -5,3 +5,4 @@ android/gradlew text eol=lf
 *.png binary
 *.ico binary
 *.jar binary
+packaging/linux/AppRun text eol=lf

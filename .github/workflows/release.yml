@@ -1,5 +1,7 @@
 # Builds everything for a release tag (v1.2.3) and attaches it to the GitHub release:
-# desktop apps (Windows, macOS, Linux), the Android APK and the Docker image on ghcr.io.
+#   Windows installer (Tapinion-Setup-*.exe), macOS disk image (.dmg), Linux AppImage,
+#   Android APK and the Docker image on ghcr.io.
+# "Run workflow" (manual) builds the same files as downloadable artifacts, without a release.
 #
 # Optional secrets for a release-signed APK (same key for every release, so updates install):
 #   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD
@@ -9,44 +11,90 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
   packages: write
 
 jobs:
-  desktop:
-    strategy:
-      matrix:
-        include:
-          - {os: windows-latest, name: windows, file: Tapinion.exe}
-          - {os: macos-latest, name: macos, file: Tapinion.app}
-          - {os: ubuntu-latest, name: linux, file: Tapinion}
-    runs-on: ${{ matrix.os }}
+  windows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - id: v
+        shell: bash
+        run: echo "version=$( [[ "$GITHUB_REF" == refs/tags/v* ]] && echo "${GITHUB_REF_NAME#v}" || echo "0.0.0-dev" )" >> "$GITHUB_OUTPUT"
       - run: pip install . pyinstaller
       - run: pyinstaller --noconfirm --distpath dist --workpath build packaging/pyinstaller/tapinion.spec
-      - name: Package
-        shell: bash
+      - name: Installer (Inno Setup, preinstalled on the runner)
+        shell: pwsh
         run: |
-          V="${GITHUB_REF_NAME#v}"
-          cd dist
-          case "${{ matrix.name }}" in
-            windows) mv Tapinion.exe "Tapinion-$V-windows.exe" ;;
-            macos)   ditto -c -k --keepParent Tapinion.app "Tapinion-$V-macos.zip" ;;
-            linux)   tar czf "Tapinion-$V-linux.tar.gz" Tapinion ;;
-          esac
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y; $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          & $iscc "/DAppVersion=${{ steps.v.outputs.version }}" packaging\windows\tapinion.iss
       - uses: actions/upload-artifact@v4
         with:
-          name: desktop-${{ matrix.name }}
-          path: |
-            dist/Tapinion-*-windows.exe
-            dist/Tapinion-*-macos.zip
-            dist/Tapinion-*-linux.tar.gz
+          name: windows
+          path: dist/Tapinion-Setup-*.exe
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - id: v
+        run: echo "version=$( [[ "$GITHUB_REF" == refs/tags/v* ]] && echo "${GITHUB_REF_NAME#v}" || echo "0.0.0-dev" )" >> "$GITHUB_OUTPUT"
+      - run: pip install . pyinstaller
+      - name: App icon
+        run: |
+          mkdir tapinion.iconset
+          for s in 16 32 128 256 512; do
+            sips -z $s $s tapinion/static/icons/icon-512.png --out tapinion.iconset/icon_${s}x${s}.png >/dev/null
+            d=$((s*2)); [ $d -le 512 ] && sips -z $d $d tapinion/static/icons/icon-512.png --out tapinion.iconset/icon_${s}x${s}@2x.png >/dev/null
+          done
+          iconutil -c icns tapinion.iconset -o packaging/pyinstaller/tapinion.icns
+      - run: pyinstaller --noconfirm --distpath dist --workpath build packaging/pyinstaller/tapinion.spec
+      - name: Disk image (drag Tapinion into Applications)
+        run: |
+          mkdir dmg && cp -R dist/Tapinion.app dmg/ && ln -s /Applications dmg/Applications
+          hdiutil create -volname Tapinion -srcfolder dmg -ov -format UDZO "dist/Tapinion-${{ steps.v.outputs.version }}-macos.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/*.dmg
+
+  linux:
+    runs-on: ubuntu-22.04   # older glibc: the AppImage runs on more distributions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - id: v
+        run: echo "version=$( [[ "$GITHUB_REF" == refs/tags/v* ]] && echo "${GITHUB_REF_NAME#v}" || echo "0.0.0-dev" )" >> "$GITHUB_OUTPUT"
+      - run: sudo apt-get update && sudo apt-get install -y python3-tk tk-dev
+      - run: pip install . pyinstaller
+      - run: pyinstaller --noconfirm --distpath dist --workpath build packaging/pyinstaller/tapinion.spec
+      - name: AppImage
+        run: |
+          mkdir -p AppDir/usr/lib
+          cp -R dist/Tapinion AppDir/usr/lib/tapinion
+          cp tapinion/static/icons/icon-512.png AppDir/tapinion.png
+          cp packaging/linux/tapinion.desktop AppDir/tapinion.desktop
+          cp packaging/linux/AppRun AppDir/AppRun && chmod +x AppDir/AppRun
+          curl -sSfL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+          APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 ./appimagetool AppDir "dist/Tapinion-${{ steps.v.outputs.version }}-x86_64.AppImage"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/*.AppImage
 
   android:
     runs-on: ubuntu-latest
@@ -56,6 +104,8 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+      - id: v
+        run: echo "version=$( [[ "$GITHUB_REF" == refs/tags/v* ]] && echo "${GITHUB_REF_NAME#v}" || echo "0.0.0-dev" )" >> "$GITHUB_OUTPUT"
       - name: Keystore
         env:
           KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -69,14 +119,14 @@ jobs:
       - run: bash ./gradlew assembleRelease --no-daemon
         working-directory: android
       - run: |
-          V="${GITHUB_REF_NAME#v}"
-          mkdir -p dist && cp android/app/build/outputs/apk/release/app-release.apk "dist/tapinion-android-$V.apk"
+          mkdir -p dist && cp android/app/build/outputs/apk/release/app-release.apk "dist/tapinion-android-${{ steps.v.outputs.version }}.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: android
           path: dist/*.apk
 
   docker:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -95,7 +145,8 @@ jobs:
             ghcr.io/${{ github.repository }}:latest
 
   release:
-    needs: [desktop, android]
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, macos, linux, android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4

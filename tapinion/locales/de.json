@@ -1,7 +1,6 @@
 {
   "lang.de": "Deutsch",
   "lang.en": "English",
-
   "nav.label": "Hauptnavigation",
   "nav.dashboard": "Auswertung",
   "nav.reports": "Berichte",
@@ -10,14 +9,12 @@
   "nav.account": "Konto",
   "nav.logout": "Abmelden",
   "footer.source": "Quellcode",
-
   "role.organizer": "Veranstalter",
   "role.analyst": "Auswerter",
   "role.admin": "Administrator",
   "role.organizer.desc": "Sieht offene Veranstaltungen, legt Veranstaltungen an, startet den Kiosk und sieht das Gesamtergebnis (Anzahlen und Score) – keine einzelnen Bewertungen, kein Export, kein PDF.",
   "role.analyst.desc": "Sieht zusätzlich alle Veranstaltungen und die vollständige Auswertung mit einzelnen Bewertungen, bearbeitet Veranstaltungen, exportiert CSV und PDF. Darf weder Veranstaltungen noch Bewertungen löschen.",
   "role.admin.desc": "Alles: löscht auch Veranstaltungen und einzelne Bewertungen, verwaltet Benutzer und die Darstellung.",
-
   "mode.nps": "Weiterempfehlung (0–10)",
   "mode.smiley": "Smiley-Bewertung",
   "mode.nps.short": "0–10",
@@ -33,14 +30,12 @@
   "group.unhappy": "Unzufrieden",
   "question.default.nps": "Wie wahrscheinlich ist es, dass Sie diese Veranstaltung weiterempfehlen?",
   "question.default.smiley": "Wie hat Ihnen die heutige Veranstaltung gefallen?",
-
   "common.save": "Speichern",
   "common.cancel": "Abbrechen",
   "common.delete": "Löschen",
   "common.edit": "Bearbeiten",
   "common.change": "ändern",
   "common.close": "Schließen",
-
   "error.title": "Fehler {code}",
   "error.home": "Zur Startseite",
   "error.forbidden": "Dafür fehlt Ihnen die Berechtigung.",
@@ -48,7 +43,6 @@
   "error.event_not_found": "Veranstaltung nicht gefunden.",
   "error.password_short": "Das Passwort braucht mindestens {n} Zeichen.",
   "error.password_mismatch": "Die Passwörter stimmen nicht überein.",
-
   "setup.title": "Tapinion einrichten",
   "setup.intro": "Legen Sie das erste Administratorkonto an. Name, Logo und Farben lassen sich danach unter Einstellungen ändern.",
   "setup.brand_name": "Name in der App (optional)",
@@ -59,7 +53,6 @@
   "setup.submit": "Konto anlegen",
   "setup.not_allowed": "Die Ersteinrichtung ist nur auf dem Rechner möglich, auf dem Tapinion läuft.",
   "setup.not_allowed_hint": "Öffnen Sie Tapinion dort (http://localhost:…), oder starten Sie den Server mit SETUP_TOKEN und öffnen /setup?token=… – oder legen Sie den ersten Benutzer mit ADMIN_USER und ADMIN_PASSWORD an.",
-
   "login.title": "Anmelden",
   "login.intro": "Auswertung und Verwaltung sind nur nach der Anmeldung sichtbar.",
   "login.username": "Benutzername",
@@ -69,14 +62,12 @@
   "login.error_throttled": "Zu viele Fehlversuche – bitte in einigen Minuten erneut versuchen.",
   "login.kiosks_title": "Kiosk öffnen",
   "login.kiosks_intro": "Den Bewertungsbildschirm einer offenen Veranstaltung direkt auf diesem Gerät starten. Dafür ist die PIN der Veranstaltung nötig.",
-
   "account.title": "Konto",
   "account.old": "Aktuelles Passwort",
   "account.new": "Neues Passwort (mindestens {n} Zeichen)",
   "account.submit": "Passwort ändern",
   "account.changed": "Passwort geändert.",
   "account.error_old": "Das aktuelle Passwort stimmt nicht.",
-
   "dashboard.no_events": "Es gibt noch keine Veranstaltungen.",
   "dashboard.create_first": "Jetzt eine anlegen.",
   "dashboard.event": "Veranstaltung",
@@ -97,7 +88,6 @@
   "dashboard.more": "Mehr anzeigen",
   "dashboard.delete_point_confirm": "Die Bewertung vom {when} löschen? Das lässt sich nicht rückgängig machen.",
   "dashboard.aggregate_only": "Ihre Rolle zeigt nur das Gesamtergebnis. Einzelne Bewertungen, Export und PDF sind Auswertern und Administratoren vorbehalten.",
-
   "reports.overview_title": "Gesamtbericht",
   "reports.overview_intro": "PDF-Übersicht über mehrere Veranstaltungen: Kennzahlen gesamt, Tabelle und Score je Veranstaltung, auf Wunsch mit einer Seite je Veranstaltung.",
   "reports.from": "Von",
@@ -109,7 +99,6 @@
   "reports.preview": "Der Bericht umfasst {events} Veranstaltung(en) mit {responses} Bewertungen ({first} bis {last}).",
   "reports.preview_empty": "Für diese Auswahl gibt es keine Veranstaltungen mit Bewertungen.",
   "reports.single_title": "Bericht zu einer Veranstaltung",
-
   "events.create_title": "Neue Veranstaltung",
   "events.name": "Name",
   "events.name_placeholder": "z. B. Workshop Frühjahr 2027",
@@ -151,7 +140,6 @@
   "events.error_date": "Ungültiges Datum.",
   "events.error_pin": "Die Kiosk-PIN muss aus 4 bis 8 Ziffern bestehen.",
   "events.error_mode_locked": "Die Abfrageart lässt sich nicht mehr ändern, sobald Bewertungen vorliegen.",
-
   "kiosk.language": "Sprache",
   "kiosk.exit": "Kiosk verlassen",
   "kiosk.thanks": "Vielen Dank für Ihr Feedback!",
@@ -170,7 +158,6 @@
   "kiosk.unknown": "Unbekannter Kiosk-Link.",
   "kiosk.locked": "Kiosk gesperrt – bitte PIN eingeben.",
   "kiosk.invalid": "Ungültige Bewertung.",
-
   "settings.tab_appearance": "Darstellung",
   "settings.tab_users": "Benutzer",
   "settings.appearance_title": "Darstellung",
@@ -191,7 +178,6 @@
   "settings.error_color": "„{value}“ ist keine Farbe im Format #RRGGBB.",
   "settings.error_logo_size": "Das Logo ist größer als 1 MB.",
   "settings.error_logo_type": "Das Logo muss ein PNG-, JPG-, WebP- oder SVG-Bild sein.",
-
   "users.create_title": "Neuer Benutzer",
   "users.initial_password": "Startpasswort (mindestens {n} Zeichen)",
   "users.role": "Rolle",
@@ -209,12 +195,10 @@
   "users.error_exists": "Diesen Benutzernamen gibt es schon.",
   "users.error_self": "Das eigene Konto kann nicht gelöscht werden.",
   "users.error_last_admin": "Es muss mindestens einen Administrator geben.",
-
   "csv.event": "Veranstaltung",
   "csv.date": "Datum",
   "csv.time": "Uhrzeit",
   "csv.value": "Bewertung",
-
   "report.file_event": "Bericht",
   "report.file_overview": "Gesamtbericht",
   "report.title_event": "Bericht: {name}",
@@ -248,5 +232,42 @@
   "report.smiley_summary": "Smiley-Abfragen zusammengefasst",
   "report.all_events": "Alle Veranstaltungen",
   "report.score_per_event": "Score je Veranstaltung",
-  "report.score_note": "NPS bzw. Zufriedenheitssaldo, jeweils von −100 bis +100."
+  "report.score_note": "NPS bzw. Zufriedenheitssaldo, jeweils von −100 bis +100.",
+  "wizard.progress": "Fortschritt der Einrichtung",
+  "wizard.step_language": "Sprache",
+  "wizard.step_account": "Konto",
+  "wizard.step_look": "Aussehen",
+  "wizard.step_event": "Erste Veranstaltung",
+  "wizard.step_tablet": "Tablet",
+  "wizard.welcome": "Willkommen bei Tapinion",
+  "wizard.welcome_intro": "In fünf kurzen Schritten ist Tapinion bereit: Sprache, Ihr Konto, Ihr Aussehen, eine erste Veranstaltung – und das Tablet für Ihre Gäste.",
+  "wizard.choose_language": "In welcher Sprache soll Tapinion arbeiten?",
+  "wizard.account_title": "Ihr Administratorkonto",
+  "wizard.account_intro": "Mit diesem Konto sehen Sie alle Ergebnisse und verwalten Tapinion. Weitere Personen mit eigenen Rollen können Sie später anlegen.",
+  "wizard.account_hint": "Bewahren Sie das Passwort gut auf – ein Zurücksetzen per E-Mail gibt es nicht.",
+  "wizard.back": "Zurück",
+  "wizard.next": "Weiter",
+  "wizard.skip": "Überspringen",
+  "wizard.finish": "Fertig",
+  "wizard.look_title": "Ihr Aussehen",
+  "wizard.look_intro": "Optional: Name, Logo und Farbe erscheinen in der App, am Kiosk und in den PDF-Berichten.",
+  "wizard.look_name_placeholder": "z. B. Ihr Unternehmen oder Projekt",
+  "wizard.look_later": "Alles lässt sich jederzeit unter Einstellungen ändern.",
+  "wizard.event_title": "Ihre erste Veranstaltung",
+  "wizard.event_intro": "Eine Veranstaltung ist eine Abfrage – etwa ein Workshop, ein Tag der offenen Tür oder die Kantine in dieser Woche.",
+  "wizard.event_mode": "Wie sollen Gäste bewerten?",
+  "wizard.event_pin_hint": "Mit dieser PIN wird der Kiosk am Tablet geöffnet und geschlossen. Notieren Sie sie – nachsehen lässt sie sich auch später unter Veranstaltungen.",
+  "wizard.tablet_title": "Tablet verbinden",
+  "wizard.tablet_intro": "Scannen Sie diesen Code mit dem Tablet, um den Kiosk für „{name}“ zu öffnen.",
+  "wizard.tablet_pin": "PIN: {pin}",
+  "wizard.howto_android_title": "Android:",
+  "wizard.howto_android": "Tapinion-App installieren (von der Download-Seite), „QR-Code scannen“ antippen, PIN eingeben – fertig.",
+  "wizard.howto_ipad_title": "iPad / iPhone:",
+  "wizard.howto_ipad": "Code mit der Kamera scannen, PIN eingeben, dann Teilen → „Zum Home-Bildschirm“ für Vollbild.",
+  "wizard.howto_here_title": "Dieser Rechner:",
+  "wizard.howto_here": "„Kiosk hier starten“ macht diesen Bildschirm zum Kiosk (Sie werden dabei abgemeldet).",
+  "wizard.tablet_network": "Das Tablet muss im selben WLAN sein wie dieser Rechner. Klappt die Verbindung nicht, Tapinion in der Firewall erlauben (private Netzwerke).",
+  "wizard.tablet_later": "Sie haben die Veranstaltung übersprungen. Unter Veranstaltungen legen Sie jederzeit eine an und zeigen ihren QR-Code.",
+  "wizard.start_here": "Kiosk hier starten",
+  "settings.wizard_again": "Einrichtungsassistent erneut öffnen"
 }

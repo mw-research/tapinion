@@ -10,17 +10,46 @@ PNG_1PX = bytes.fromhex("89504e470d0a1a0a0000000d4948445200000001000000010806000
                         "1f15c4890000000d49444154789c6360000002000100e221bc330000000049454e44ae426082")
 
 
-def test_first_setup(fresh_db):
+def test_setup_wizard_all_steps(fresh_db):
     with TestClient(app) as t:
         assert t.get("/", follow_redirects=False).headers["location"] == "/setup"
+        # 1: language
+        page = t.get("/setup").text
+        assert "Welcome to Tapinion" in page and 'aria-current="step"' in page
         token = csrf_of(t, "/setup")
+        r = t.post("/lang", data={"csrf": token, "lang": "de", "back": "/setup?step=2"}, follow_redirects=False)
+        assert r.headers["location"] == "/setup?step=2"
+        # 2: account (German now)
+        assert "Ihr Administratorkonto" in t.get("/setup?step=2").text
+        bad = t.post("/setup", data={"csrf": token, "username": "boss", "password": "a-long-password", "password2": "other-password"})
+        assert bad.status_code == 400 and "stimmen nicht" in bad.text
         r = t.post("/setup", data={"csrf": token, "username": "boss", "password": "a-long-password",
-                                   "password2": "a-long-password", "lang": "de", "brand_name": "Meine Firma"},
-                   follow_redirects=False)
-        assert r.headers["location"] == "/settings"
-        page = t.get("/settings").text
-        assert "Darstellung" in page and "Meine Firma" in page
+                                   "password2": "a-long-password"}, follow_redirects=False)
+        assert r.headers["location"] == "/welcome?step=3"
+        token = csrf_of(t, "/account")
+        # 3: look
+        r = t.post("/welcome/appearance", data={"csrf": token, "brand_name": "Meine Firma", "color_primary": "#225588"},
+                   files={"logo": ("logo.png", PNG_1PX, "image/png")}, follow_redirects=False)
+        assert r.headers["location"] == "/welcome?step=4"
+        assert "Meine Firma" in t.get("/welcome?step=4").text
+        # 4: first event
+        r = t.post("/welcome/event", data={"csrf": token, "name": "Sommerfest", "mode": "smiley", "pin": "4711",
+                                          "event_date": "2026-11-13", "kiosk_lang": "de"}, follow_redirects=False)
+        assert r.headers["location"].startswith("/welcome?step=5&event_id=")
+        # 5: tablet
+        page = t.get(r.headers["location"]).text
+        assert "<svg" in page and "PIN: 4711" in page and "/k/" in page
         assert t.get("/setup", follow_redirects=False).headers["location"] == "/login"
+    with db.session() as conn:
+        assert [u["lang"] for u in db.list_users(conn)] == ["de"]
+        assert db.get_settings(conn)["brand_name"] == "Meine Firma"
+
+
+def test_wizard_skips_and_admin_only(client_for):
+    c, _ = client_for("admin")
+    assert "Tablet" in c.get("/welcome?step=5").text  # skipped event: hint instead of QR
+    o, _ = client_for("orga")
+    assert o.get("/welcome?step=3").status_code == 403
 
 
 def test_language_switch_and_accept_language(users):

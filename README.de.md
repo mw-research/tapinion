@@ -29,23 +29,35 @@ wo Menschen vorbeikommen: ein Tipp auf einen Smiley oder die Skala 0–10, Ergeb
 
 ### Ohne Server: Laptop und Tablets
 
-1. **Tapinion für Windows** unter [Releases](https://github.com/mw-research/tapinion/releases) herunterladen
-   und starten (Fassungen für macOS und Linux liegen ebenfalls dort). Ein kleines Fenster zeigt die
-   Adressen; der Browser öffnet die Ersteinrichtung.
-2. Den Netzwerkzugriff erlauben, wenn die Firewall fragt (private Netzwerke), damit Tablets sich verbinden können.
-3. Eine Veranstaltung anlegen, daneben **QR-Code** anklicken und mit dem Tablet scannen:
-   - **Android**: die **Tapinion-App** installieren (`tapinion-android-*.apk` aus den Releases; einmalig
-     „Installation aus unbekannten Quellen“ erlauben). Sie läuft im Vollbild, hält den Bildschirm an und
-     kann sich anheften, solange der Kiosk läuft.
-   - **iPad / iPhone**: QR-Code in Safari öffnen, dann *Teilen → Zum Home-Bildschirm* für ein
-     Vollbild-App-Symbol. Für einen abgesicherten Kiosk *Einstellungen → Bedienungshilfen → Geführter Zugriff*.
-4. Am Tablet einmal die PIN der Veranstaltung eingeben. Fertig.
+| Rechner | Download unter [Releases](https://github.com/mw-research/tapinion/releases/latest) | |
+|---|---|---|
+| Windows 10/11 | `Tapinion-Setup-….exe` | Doppelklick, *Weiter*, *Weiter*, *Fertigstellen* |
+| macOS (Apple-Chip) | `Tapinion-…-macos.dmg` | Öffnen, Tapinion in *Programme* ziehen |
+| Linux | `Tapinion-…-x86_64.AppImage` | Ausführbar machen, doppelklicken |
+
+Tapinion startet, öffnet den Browser und führt in fünf Schritten durch die Einrichtung:
+**Sprache → Administratorkonto → Aussehen (Logo, Farbe, optional) → erste Veranstaltung →
+Tablet verbinden** (QR-Code). Ein kleines Fenster zeigt, dass Tapinion läuft; wer es schließt,
+beendet Tapinion.
+
+Unter Windows legt der Installer auch die Firewall-Regel für die Tablets an, ein Desktop-Symbol
+und – falls angehakt – den Autostart. Deinstallieren über *Einstellungen → Apps*; die Daten
+bleiben erhalten, außer Sie wählen das Löschen.
+
+**Tablets** (im selben WLAN wie der Rechner):
+
+- **Android**: `tapinion-android-….apk` aus den Releases installieren (einmalig „Installation
+  unbekannter Apps“ erlauben), *QR-Code scannen* antippen, PIN der Veranstaltung eingeben. Die App
+  läuft im Vollbild, hält den Bildschirm an und heftet sich an, solange der Kiosk läuft.
+- **iPad / iPhone**: QR-Code mit der Kamera scannen, PIN eingeben, dann *Teilen → Zum
+  Home-Bildschirm*. Für einen abgesicherten Kiosk: *Einstellungen → Bedienungshilfen → Geführter Zugriff*.
 
 Die Daten liegen im Anwendungsordner des Benutzers (`%APPDATA%\Tapinion`,
 `~/Library/Application Support/Tapinion`, `~/.local/share/tapinion`): eine SQLite-Datei, leicht zu sichern.
 
-Unsignierte Programme: Windows SmartScreen und macOS Gatekeeper warnen beim ersten Start
-(*Weitere Informationen → Trotzdem ausführen* bzw. Rechtsklick → *Öffnen*).
+Die Downloads sind noch nicht codesigniert; beim ersten Start erscheint deshalb einmal eine Warnung:
+Windows *„Der Computer wurde durch Windows geschützt“* → *Weitere Informationen* → *Trotzdem ausführen*;
+macOS *„kann nicht geöffnet werden“* → *Systemeinstellungen → Datenschutz & Sicherheit* → *Dennoch öffnen*.
 
 ### Auf einem Server
 

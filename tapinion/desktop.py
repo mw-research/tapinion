@@ -54,12 +54,30 @@ def free_port(preferred: int) -> int:
     raise SystemExit("No free port found.")
 
 
+def already_running(port: int) -> bool:
+    """True if a Tapinion is already answering on this port (e.g. started at login)."""
+    import json
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/healthz", timeout=1.5) as r:
+            return json.load(r).get("status") == "ok"
+    except Exception:
+        return False
+
+
 def main():
+    preferred = int(os.environ.get("TAPINION_PORT", DEFAULT_PORT))
+    if already_running(preferred):
+        # A second double-click: just show the running instance.
+        if os.environ.get("TAPINION_HEADLESS") != "1":
+            webbrowser.open(f"http://localhost:{preferred}")
+        return
     folder = data_dir()
     os.environ.setdefault("DB_PATH", str(folder / "tapinion.sqlite3"))
     os.environ.setdefault("SECRET_KEY", secret_key(folder))
     os.environ.setdefault("COOKIE_SECURE", "0")
-    port = free_port(int(os.environ.get("TAPINION_PORT", DEFAULT_PORT)))
+    port = free_port(preferred)
 
     import uvicorn
 

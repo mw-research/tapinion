@@ -43,6 +43,7 @@
       <button class="primary">{{ t('common.save') }}</button>
     </div>
   </form>
+  <p class="reset-form"><a href="/welcome?step=3">{{ t('settings.wizard_again') }}</a></p>
   <form method="post" action="/settings/appearance/reset" class="reset-form" onsubmit="return confirm({{ t('settings.reset_confirm') | tojson | forceescape }})">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <button class="link">{{ t('settings.reset') }}</button>

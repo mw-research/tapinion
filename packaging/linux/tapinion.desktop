@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Tapinion
+GenericName=Feedback kiosk
+GenericName[de]=Feedback-Kiosk
+Comment=Tap your opinion: feedback kiosk with evaluation
+Comment[de]=Feedback-Kiosk mit Auswertung
+Exec=Tapinion
+Icon=tapinion
+Categories=Office;
+Terminal=false

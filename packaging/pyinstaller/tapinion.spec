@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller recipe for the one-file desktop app (Windows .exe, macOS .app, Linux binary).
+# PyInstaller recipe for the desktop app. Produces a program folder (dist/Tapinion/), which the
+# installers package: Inno Setup (Windows), a .app in a .dmg (macOS), an AppImage (Linux).
 #   pyinstaller --noconfirm packaging/pyinstaller/tapinion.spec
 import sys
 from pathlib import Path
@@ -29,20 +30,29 @@ a = Analysis(
     noarchive=False,
 )
 pyz = PYZ(a.pure)
-icon = str(Path(SPECPATH) / "tapinion.ico")
 
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name="Tapinion",
     console=False,
-    icon=icon,
+    icon=str(Path(SPECPATH) / "tapinion.ico"),
     upx=False,
-    runtime_tmpdir=None,
 )
+coll = COLLECT(exe, a.binaries, a.datas, name="Tapinion", upx=False)
 
 if sys.platform == "darwin":
-    app = BUNDLE(exe, name="Tapinion.app", icon=None, bundle_identifier="org.tapinion.desktop")
+    app = BUNDLE(
+        coll,
+        name="Tapinion.app",
+        icon=str(Path(SPECPATH) / "tapinion.icns") if (Path(SPECPATH) / "tapinion.icns").is_file() else None,
+        bundle_identifier="io.github.mwresearch.tapinion",
+        info_plist={
+            "CFBundleDisplayName": "Tapinion",
+            "CFBundleShortVersionString": "1.0.0",
+            "NSHighResolutionCapable": True,
+            "NSLocalNetworkUsageDescription": "Tablets in your network connect to Tapinion.",
+        },
+    )

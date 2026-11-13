@@ -1,0 +1,7 @@
+<ol class="wizard-steps" aria-label="{{ t('wizard.progress') }}">
+  {% for n, key in [(1, 'wizard.step_language'), (2, 'wizard.step_account'), (3, 'wizard.step_look'), (4, 'wizard.step_event'), (5, 'wizard.step_tablet')] %}
+  <li class="{{ 'done' if n < step else ('now' if n == step) }}" {% if n == step %}aria-current="step"{% endif %}>
+    <span class="num">{{ '✓' if n < step else n }}</span><span class="lbl">{{ t(key) }}</span>
+  </li>
+  {% endfor %}
+</ol>

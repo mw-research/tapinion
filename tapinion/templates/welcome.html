@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ t('setup.title') }} · {{ brand.name or 'Tapinion' }}{% endblock %}
+{% block content %}
+<section class="card wizard">
+  {% include "_wizard_steps.html" %}
+  {% if errors %}<div class="alert" role="alert"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+
+  {% if step == 3 %}
+  <h1>{{ t('wizard.look_title') }}</h1>
+  <p class="lead">{{ t('wizard.look_intro') }}</p>
+  <form method="post" action="/welcome/appearance" enctype="multipart/form-data" class="stack narrow-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>{{ t('settings.brand_name') }} <input name="brand_name" maxlength="60" value="{{ brand.name }}" placeholder="{{ t('wizard.look_name_placeholder') }}"></label>
+    <div class="logo-field">
+      <span class="label">{{ t('settings.logo') }}</span>
+      <input type="file" name="logo" accept="image/png,image/jpeg,image/svg+xml,image/webp">
+      <span class="muted small">{{ t('settings.logo_hint') }}</span>
+    </div>
+    <label>{{ t('settings.color_primary') }}
+      <span class="color-pair"><input type="color" value="{{ brand.primary }}" oninput="this.nextElementSibling.value = this.value" aria-hidden="true" tabindex="-1">
+      <input name="color_primary" value="{{ brand.primary }}" pattern="#[0-9a-fA-F]{6}" required oninput="if (/^#[0-9a-fA-F]{6}$/.test(this.value)) this.previousElementSibling.value = this.value"></span>
+    </label>
+    <p class="muted small">{{ t('wizard.look_later') }}</p>
+    <div class="wizard-nav">
+      <a class="btn ghost" href="/welcome?step=4">{{ t('wizard.skip') }}</a>
+      <button class="primary">{{ t('wizard.next') }}</button>
+    </div>
+  </form>
+
+  {% elif step == 4 %}
+  <h1>{{ t('wizard.event_title') }}</h1>
+  <p class="lead">{{ t('wizard.event_intro') }}</p>
+  <form method="post" action="/welcome/event" class="stack narrow-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="event_date" value="{{ today }}">
+    <input type="hidden" name="kiosk_lang" value="{{ lang }}">
+    <label>{{ t('events.name') }} <input name="name" required maxlength="120" placeholder="{{ t('events.name_placeholder') }}" autofocus></label>
+    <fieldset class="choice-row">
+      <legend>{{ t('wizard.event_mode') }}</legend>
+      <label class="choice"><input type="radio" name="mode" value="smiley" checked>
+        <span class="choice-big" aria-hidden="true">🙂 😐 🙁</span><span>{{ t('mode.smiley') }}</span></label>
+      <label class="choice"><input type="radio" name="mode" value="nps">
+        <span class="choice-big" aria-hidden="true">0 … 10</span><span>{{ t('mode.nps') }}</span></label>
+    </fieldset>
+    <label>{{ t('events.pin') }} <input name="pin" inputmode="numeric" pattern="\d{4,8}" required value="{{ suggested_pin }}" autocomplete="off"></label>
+    <p class="muted small">{{ t('wizard.event_pin_hint') }}</p>
+    <div class="wizard-nav">
+      <a class="btn ghost" href="/welcome?step=5">{{ t('wizard.skip') }}</a>
+      <button class="primary">{{ t('wizard.next') }}</button>
+    </div>
+  </form>
+
+  {% else %}
+  <h1>{{ t('wizard.tablet_title') }}</h1>
+  {% if event is defined %}
+  <p class="lead">{{ t('wizard.tablet_intro', name=event.name) }}</p>
+  <div class="tablet-grid">
+    <div class="qr">{{ svg | safe }}<p class="qr-url"><code>{{ url }}</code></p>
+      <p class="pin-reminder">{{ t('wizard.tablet_pin', pin=event.kiosk_pin) }}</p></div>
+    <ol class="howto">
+      <li><b>{{ t('wizard.howto_android_title') }}</b> {{ t('wizard.howto_android') }}</li>
+      <li><b>{{ t('wizard.howto_ipad_title') }}</b> {{ t('wizard.howto_ipad') }}</li>
+      <li><b>{{ t('wizard.howto_here_title') }}</b> {{ t('wizard.howto_here') }}</li>
+    </ol>
+  </div>
+  <p class="muted small">{{ t('wizard.tablet_network') }}</p>
+  {% else %}
+  <p class="lead">{{ t('wizard.tablet_later') }}</p>
+  {% endif %}
+  <div class="wizard-nav">
+    {% if event is defined %}<a class="btn ghost" href="/events/{{ event.id }}/kiosk" onclick="return confirm({{ t('events.start_confirm') | tojson | forceescape }})">{{ t('wizard.start_here') }}</a>{% endif %}
+    <a class="primary btn" href="/events">{{ t('wizard.finish') }}</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

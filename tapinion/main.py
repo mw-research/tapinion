@@ -186,12 +186,13 @@ def setup_allowed(request, token=None) -> bool:
 
 
 @app.get("/setup", response_class=HTMLResponse)
-def setup_page(request: Request, token: str | None = None):
+def setup_page(request: Request, token: str | None = None, step: int = 1):
+    """Wizard steps 1 (language) and 2 (administrator account), before anyone exists."""
     with db.session() as conn:
         if db.count_users(conn):
             return RedirectResponse("/login", status_code=303)
     return render(request, "setup.html", user=None, allowed=setup_allowed(request, token), token=token or "",
-                  error=None)
+                  step=2 if step == 2 else 1, error=None)
 
 
 @app.post("/setup", response_class=HTMLResponse)
@@ -204,7 +205,7 @@ async def setup_save(request: Request):
     if not setup_allowed(request, token):
         raise HTTPException(403, tr(request, "setup.not_allowed"))
     username, password = form.get("username", "").strip(), form.get("password", "")
-    lang = form.get("lang") if form.get("lang") in i18n.languages() else lang_of(request)
+    lang = lang_of(request)
     error = None
     if not USERNAME_RE.fullmatch(username):
         error = i18n.translate(lang, "users.error_username")
@@ -213,14 +214,68 @@ async def setup_save(request: Request):
     elif password != form.get("password2", ""):
         error = i18n.translate(lang, "error.password_mismatch")
     if error:
-        return render(request, "setup.html", 400, user=None, allowed=True, token=token or "", error=error)
+        return render(request, "setup.html", 400, user=None, allowed=True, token=token or "", step=2, error=error)
     with db.session() as conn:
         uid = db.create_user(conn, username, hash_secret(password), "admin", lang)
-        if form.get("brand_name", "").strip():
-            db.set_setting(conn, "brand_name", form["brand_name"].strip()[:60])
     request.session.clear()
     request.session.update(uid=uid, lang=lang)
-    return RedirectResponse("/settings", status_code=303)
+    return RedirectResponse("/welcome?step=3", status_code=303)
+
+
+@app.get("/welcome", response_class=HTMLResponse)
+def welcome(request: Request, step: int = 3, event_id: int | None = None):
+    """Wizard steps 3 (look), 4 (first event) and 5 (connect a tablet), for administrators."""
+    user = require(request, "settings.manage")
+    step = step if step in (3, 4, 5) else 3
+    ctx = {"step": step, "errors": [], "suggested_pin": f"{secrets.randbelow(9000) + 1000}",
+           "today": date.today().isoformat()}
+    if step == 5:
+        with db.session() as conn:
+            event = db.get_event(conn, event_id) if event_id else None
+        if event:
+            url = f"{netinfo.public_base(request)}/k/{event['kiosk_token']}"
+            ctx.update(event=event, url=url, svg=netinfo.qr_svg(url))
+    return render(request, "welcome.html", user=user, **ctx)
+
+
+@app.post("/welcome/appearance", response_class=HTMLResponse)
+async def welcome_appearance(request: Request):
+    user = require(request, "settings.manage")
+    form = await checked_form(request)
+    errors = []
+    color = form.get("color_primary", "").strip()
+    if not branding.COLOR_RE.fullmatch(color):
+        errors.append(tr(request, "settings.error_color", value=color))
+    upload = form.get("logo")
+    logo_data = None
+    if upload is not None and getattr(upload, "filename", ""):
+        logo_data = await upload.read()
+        if len(logo_data) > branding.MAX_LOGO_BYTES:
+            errors.append(tr(request, "settings.error_logo_size"))
+        elif not branding.sniff_image(logo_data):
+            errors.append(tr(request, "settings.error_logo_type"))
+    if errors:
+        return render(request, "welcome.html", 400, user=user, step=3, errors=errors)
+    with db.session() as conn:
+        db.set_setting(conn, "brand_name", form.get("brand_name", "").strip()[:60])
+        db.set_setting(conn, "color_primary", color.lower())
+        if logo_data:
+            db.set_asset(conn, "logo", branding.sniff_image(logo_data), logo_data)
+    return RedirectResponse("/welcome?step=4", status_code=303)
+
+
+@app.post("/welcome/event", response_class=HTMLResponse)
+async def welcome_event(request: Request):
+    user = require(request, "settings.manage")
+    form = await checked_form(request)
+    data, errors = read_event_form(request, form, require_pin=True)
+    if errors:
+        return render(request, "welcome.html", 400, user=user, step=4, errors=errors,
+                      suggested_pin=form.get("pin", ""), today=date.today().isoformat())
+    with db.session() as conn:
+        eid = db.create_event(conn, data["name"], data["event_date"], data["mode"], "", "", data["kiosk_lang"],
+                              data["kiosk_pin"], user["id"])
+    return RedirectResponse(f"/welcome?step=5&event_id={eid}", status_code=303)
 
 
 def open_kiosks(conn):

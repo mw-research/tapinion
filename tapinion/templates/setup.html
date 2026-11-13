@@ -1,25 +1,40 @@
 {% extends "base.html" %}
 {% block title %}{{ t('setup.title') }} · Tapinion{% endblock %}
 {% block content %}
-<section class="card narrow">
-  <h1>{{ t('setup.title') }}</h1>
+<section class="card wizard">
+  {% include "_wizard_steps.html" %}
   {% if not allowed %}
+  <h1>{{ t('setup.title') }}</h1>
   <div class="alert" role="alert">{{ t('setup.not_allowed') }}</div>
   <p class="muted">{{ t('setup.not_allowed_hint') }}</p>
+  {% elif step == 1 %}
+  <h1>{{ t('wizard.welcome') }}</h1>
+  <p class="lead">{{ t('wizard.welcome_intro') }}</p>
+  <p class="muted">{{ t('wizard.choose_language') }}</p>
+  <form method="post" action="/lang" class="choice-row">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="back" value="/setup?step=2{% if token %}&token={{ token }}{% endif %}">
+    {% for code in languages() %}
+    <button class="choice {{ 'selected' if code == lang }}" name="lang" value="{{ code }}">
+      <span class="choice-big">{{ code | upper }}</span><span>{{ t('lang.' ~ code) }}</span>
+    </button>
+    {% endfor %}
+  </form>
   {% else %}
-  <p class="muted">{{ t('setup.intro') }}</p>
+  <h1>{{ t('wizard.account_title') }}</h1>
+  <p class="lead">{{ t('wizard.account_intro') }}</p>
   {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
-  <form method="post" action="/setup" class="stack">
+  <form method="post" action="/setup" class="stack narrow-form">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <input type="hidden" name="token" value="{{ token }}">
-    <label>{{ t('setup.brand_name') }} <input name="brand_name" maxlength="60" placeholder="Tapinion"></label>
     <label>{{ t('setup.username') }} <input name="username" value="admin" autocomplete="username" required></label>
-    <label>{{ t('setup.password', n=10) }} <input name="password" type="password" minlength="10" autocomplete="new-password" required></label>
+    <label>{{ t('setup.password', n=10) }} <input name="password" type="password" minlength="10" autocomplete="new-password" required autofocus></label>
     <label>{{ t('setup.password2') }} <input name="password2" type="password" minlength="10" autocomplete="new-password" required></label>
-    <label>{{ t('setup.lang') }}
-      <select name="lang">{% for code in languages() %}<option value="{{ code }}" {{ 'selected' if code == lang }}>{{ t('lang.' ~ code) }}</option>{% endfor %}</select>
-    </label>
-    <button class="primary">{{ t('setup.submit') }}</button>
+    <p class="muted small">{{ t('wizard.account_hint') }}</p>
+    <div class="wizard-nav">
+      <a class="btn ghost" href="/setup?step=1{% if token %}&token={{ token }}{% endif %}">{{ t('wizard.back') }}</a>
+      <button class="primary">{{ t('wizard.next') }}</button>
+    </div>
   </form>
   {% endif %}
 </section>

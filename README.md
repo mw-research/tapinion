@@ -29,23 +29,34 @@ people pass by: one tap on a smiley or on a 0–10 scale, results live, PDF repo
 
 ### Without a server: laptop + tablets
 
-1. Download **Tapinion for Windows** from the [releases](https://github.com/mw-research/tapinion/releases)
-   and start it. (macOS and Linux builds are attached to the releases too.)
-   A small window shows the addresses; the browser opens the first-time setup.
-2. Allow network access when the firewall asks (private networks), so tablets can connect.
-3. Create an event, click **QR code** next to it and scan it with the tablet:
-   - **Android**: install the **Tapinion app** (`tapinion-android-*.apk` from the releases;
-     allow "install unknown apps" once). It runs full screen, keeps the screen on and can pin
-     itself while the kiosk runs.
-   - **iPad / iPhone**: open the QR code in Safari, then *Share → Add to Home Screen* for a
-     full-screen app icon. For a locked-down kiosk use *Settings → Accessibility → Guided Access*.
-4. Enter the event's PIN on the tablet once. Done.
+| Computer | Download from the [releases](https://github.com/mw-research/tapinion/releases/latest) | |
+|---|---|---|
+| Windows 10/11 | `Tapinion-Setup-….exe` | Double-click, *Next*, *Next*, *Finish* |
+| macOS (Apple silicon) | `Tapinion-…-macos.dmg` | Open, drag Tapinion into *Applications* |
+| Linux | `Tapinion-…-x86_64.AppImage` | Make executable, double-click |
+
+Tapinion starts, opens the browser and guides you through five steps: **language →
+administrator account → look (logo, colour, optional) → first event → connect the tablet**
+(QR code). A small window shows that Tapinion is running; closing it stops Tapinion.
+
+On Windows the installer also creates the firewall rule so tablets can connect, a desktop icon
+and – if ticked – starts Tapinion at login. Uninstall via *Settings → Apps*; your data is kept
+unless you choose to delete it.
+
+**Tablets** (same Wi-Fi as the computer):
+
+- **Android**: install `tapinion-android-….apk` from the releases (allow "install unknown apps"
+  once), tap *Scan QR code*, enter the event's PIN. The app runs full screen, keeps the screen on
+  and pins itself while the kiosk runs.
+- **iPad / iPhone**: scan the QR code with the camera, enter the PIN, then *Share → Add to Home
+  Screen*. For a locked-down kiosk: *Settings → Accessibility → Guided Access*.
 
 Data lives in the user's application folder (`%APPDATA%\Tapinion`, `~/Library/Application Support/Tapinion`,
 `~/.local/share/tapinion`): one SQLite file, easy to back up.
 
-Unsigned builds: Windows SmartScreen and macOS Gatekeeper show a warning the first time
-(*More info → Run anyway* / right-click → *Open*).
+The downloads are not code-signed yet, so the first start shows a warning once:
+Windows *"Windows protected your PC"* → *More info* → *Run anyway*;
+macOS *"cannot be opened"* → *System Settings → Privacy & Security* → *Open Anyway*.
 
 ### On a server
 
@@ -123,7 +134,7 @@ tapinion demo && tapinion serve
 Stack: FastAPI, Jinja2 templates, [htmx](https://htmx.org) (vendored), SQLite, fpdf2 for PDFs.
 Translations live in `tapinion/locales/*.json`; a new language is a new file.
 
-Builds: desktop app with PyInstaller (`packaging/pyinstaller/tapinion.spec`), Android app with
+Builds: desktop app with PyInstaller (`packaging/pyinstaller/tapinion.spec`), Windows installer with Inno Setup (`packaging/windows/tapinion.iss`), Android app with
 Gradle (`android/`, `./gradlew assembleRelease`). GitHub Actions builds both for every release.
 
 ## Licence

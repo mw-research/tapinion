@@ -1,7 +1,6 @@
 {
   "lang.de": "Deutsch",
   "lang.en": "English",
-
   "nav.label": "Main navigation",
   "nav.dashboard": "Results",
   "nav.reports": "Reports",
@@ -10,14 +9,12 @@
   "nav.account": "Account",
   "nav.logout": "Log out",
   "footer.source": "Source code",
-
   "role.organizer": "Organizer",
   "role.analyst": "Analyst",
   "role.admin": "Administrator",
   "role.organizer.desc": "Sees open events, creates events, starts the kiosk and sees the overall result (counts and score) – no individual ratings, no export or PDF.",
   "role.analyst.desc": "Additionally sees all events and full results with individual ratings, edits events, exports CSV and PDF. Cannot delete events or ratings.",
   "role.admin.desc": "Everything: also deletes events and individual ratings, manages users and the appearance.",
-
   "mode.nps": "Recommendation scale (0–10)",
   "mode.smiley": "Smiley rating",
   "mode.nps.short": "0–10",
@@ -33,14 +30,12 @@
   "group.unhappy": "Dissatisfied",
   "question.default.nps": "How likely are you to recommend this event to others?",
   "question.default.smiley": "How did you like today's event?",
-
   "common.save": "Save",
   "common.cancel": "Cancel",
   "common.delete": "Delete",
   "common.edit": "Edit",
   "common.change": "change",
   "common.close": "Close",
-
   "error.title": "Error {code}",
   "error.home": "Back to start",
   "error.forbidden": "You do not have permission for this.",
@@ -48,7 +43,6 @@
   "error.event_not_found": "Event not found.",
   "error.password_short": "The password needs at least {n} characters.",
   "error.password_mismatch": "The passwords do not match.",
-
   "setup.title": "Set up Tapinion",
   "setup.intro": "Create the first administrator account. You can change the name, logo and colours afterwards under Settings.",
   "setup.brand_name": "Name shown in the app (optional)",
@@ -59,7 +53,6 @@
   "setup.submit": "Create account",
   "setup.not_allowed": "The first setup can only be done on the computer running Tapinion.",
   "setup.not_allowed_hint": "Open Tapinion there (http://localhost:…), or start the server with SETUP_TOKEN and open /setup?token=… – or create the first user with ADMIN_USER and ADMIN_PASSWORD.",
-
   "login.title": "Log in",
   "login.intro": "Results and administration are only available after logging in.",
   "login.username": "User name",
@@ -69,14 +62,12 @@
   "login.error_throttled": "Too many failed attempts – please try again in a few minutes.",
   "login.kiosks_title": "Open a kiosk",
   "login.kiosks_intro": "Start the rating screen for an open event directly on this device. The event's PIN is required.",
-
   "account.title": "Account",
   "account.old": "Current password",
   "account.new": "New password (at least {n} characters)",
   "account.submit": "Change password",
   "account.changed": "Password changed.",
   "account.error_old": "The current password is wrong.",
-
   "dashboard.no_events": "There are no events yet.",
   "dashboard.create_first": "Create one now.",
   "dashboard.event": "Event",
@@ -97,7 +88,6 @@
   "dashboard.more": "Show more",
   "dashboard.delete_point_confirm": "Delete the rating from {when}? This cannot be undone.",
   "dashboard.aggregate_only": "Your role shows the overall result only. Individual ratings, export and PDF are available to analysts and administrators.",
-
   "reports.overview_title": "Overall report",
   "reports.overview_intro": "PDF overview of several events: totals, a table and the score per event, optionally with one page per event.",
   "reports.from": "From",
@@ -109,7 +99,6 @@
   "reports.preview": "The report covers {events} event(s) with {responses} ratings ({first} to {last}).",
   "reports.preview_empty": "There are no events with ratings for this selection.",
   "reports.single_title": "Report for one event",
-
   "events.create_title": "New event",
   "events.name": "Name",
   "events.name_placeholder": "e.g. Workshop spring 2027",
@@ -151,7 +140,6 @@
   "events.error_date": "Invalid date.",
   "events.error_pin": "The kiosk PIN must have 4 to 8 digits.",
   "events.error_mode_locked": "The rating type cannot be changed once ratings exist.",
-
   "kiosk.language": "Language",
   "kiosk.exit": "Leave kiosk",
   "kiosk.thanks": "Thank you for your feedback!",
@@ -170,7 +158,6 @@
   "kiosk.unknown": "Unknown kiosk link.",
   "kiosk.locked": "Kiosk locked – please enter the PIN.",
   "kiosk.invalid": "Invalid rating.",
-
   "settings.tab_appearance": "Appearance",
   "settings.tab_users": "Users",
   "settings.appearance_title": "Appearance",
@@ -191,7 +178,6 @@
   "settings.error_color": "“{value}” is not a colour in the form #RRGGBB.",
   "settings.error_logo_size": "The logo is larger than 1 MB.",
   "settings.error_logo_type": "The logo must be a PNG, JPG, WebP or SVG image.",
-
   "users.create_title": "New user",
   "users.initial_password": "Initial password (at least {n} characters)",
   "users.role": "Role",
@@ -209,12 +195,10 @@
   "users.error_exists": "This user name already exists.",
   "users.error_self": "You cannot delete your own account.",
   "users.error_last_admin": "There must be at least one administrator.",
-
   "csv.event": "Event",
   "csv.date": "Date",
   "csv.time": "Time",
   "csv.value": "Rating",
-
   "report.file_event": "Report",
   "report.file_overview": "Overall_report",
   "report.title_event": "Report: {name}",
@@ -248,5 +232,42 @@
   "report.smiley_summary": "Smiley surveys combined",
   "report.all_events": "All events",
   "report.score_per_event": "Score per event",
-  "report.score_note": "NPS or satisfaction balance, each from −100 to +100."
+  "report.score_note": "NPS or satisfaction balance, each from −100 to +100.",
+  "wizard.progress": "Setup progress",
+  "wizard.step_language": "Language",
+  "wizard.step_account": "Account",
+  "wizard.step_look": "Look",
+  "wizard.step_event": "First event",
+  "wizard.step_tablet": "Tablet",
+  "wizard.welcome": "Welcome to Tapinion",
+  "wizard.welcome_intro": "In five short steps Tapinion is ready: language, your account, your look, a first event – and the tablet for your guests.",
+  "wizard.choose_language": "Which language should Tapinion use?",
+  "wizard.account_title": "Your administrator account",
+  "wizard.account_intro": "With this account you see all results and manage Tapinion. You can add more people with their own roles later.",
+  "wizard.account_hint": "Keep the password safe – there is no reset by e-mail.",
+  "wizard.back": "Back",
+  "wizard.next": "Next",
+  "wizard.skip": "Skip",
+  "wizard.finish": "Done",
+  "wizard.look_title": "Your look",
+  "wizard.look_intro": "Optional: your name, logo and colour appear in the app, on the kiosk and in the PDF reports.",
+  "wizard.look_name_placeholder": "e.g. your company or project",
+  "wizard.look_later": "You can change all of this any time under Settings.",
+  "wizard.event_title": "Your first event",
+  "wizard.event_intro": "An event is one survey – for example a workshop, an open day or the canteen this week.",
+  "wizard.event_mode": "How should guests rate?",
+  "wizard.event_pin_hint": "With this PIN the kiosk is opened and closed on the tablet. Write it down – you can also look it up later under Events.",
+  "wizard.tablet_title": "Connect the tablet",
+  "wizard.tablet_intro": "Scan this code with the tablet to open the kiosk for “{name}”.",
+  "wizard.tablet_pin": "PIN: {pin}",
+  "wizard.howto_android_title": "Android:",
+  "wizard.howto_android": "install the Tapinion app (from the download page), tap “Scan QR code”, enter the PIN – done.",
+  "wizard.howto_ipad_title": "iPad / iPhone:",
+  "wizard.howto_ipad": "scan the code with the camera, enter the PIN, then Share → “Add to Home Screen” for full screen.",
+  "wizard.howto_here_title": "This computer:",
+  "wizard.howto_here": "“Start kiosk here” turns this screen into the kiosk (you will be logged out).",
+  "wizard.tablet_network": "The tablet must be in the same Wi-Fi as this computer. If it cannot connect, allow Tapinion in the firewall (private networks).",
+  "wizard.tablet_later": "You skipped the event. Under Events you can create one any time and show its QR code.",
+  "wizard.start_here": "Start kiosk here",
+  "settings.wizard_again": "Open the setup assistant again"
 }
