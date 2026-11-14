@@ -128,4 +128,4 @@ def test_migration_from_schema_2(tmp_path, monkeypatch):
     with db.session() as conn:
         assert "device_id" in {r[1] for r in conn.execute("PRAGMA table_info(responses)")}
         assert db.responses_without_device(conn, 1) == 1
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION

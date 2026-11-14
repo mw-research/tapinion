@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Tapinion</string>
-    <string name="setup_intro">Verbinden Sie dieses Gerät mit Tapinion auf Ihrem Rechner. Scannen Sie den QR-Code aus Tapinion – oder wählen Sie den Rechner unten aus.</string>
+    <string name="setup_intro">Scannen Sie den QR-Code einer Veranstaltung in Tapinion. Sie läuft dann auf diesem Gerät – und bleibt offline verfügbar, auch ohne den Rechner.</string>
     <string name="setup_scan">QR-Code scannen</string>
     <string name="setup_scan_prompt">Kamera auf den Tapinion-QR-Code richten</string>
     <string name="found_title">IN IHREM WLAN</string>
@@ -20,4 +20,20 @@
     <string name="change_server_question">Mit einem anderen Tapinion verbinden?</string>
     <string name="quit_question">Tapinion beenden?</string>
     <string name="quit">Beenden</string>
+    <string name="offline_title">OFFLINE VERFÜGBAR</string>
+    <string name="offline_sync">Jetzt synchronisieren</string>
+    <string name="offline_start">Starten</string>
+    <string name="offline_results">Auswertung</string>
+    <string name="offline_delete">Löschen</string>
+    <string name="offline_status_pending">%1$s · %2$d Bewertungen warten auf die Übertragung</string>
+    <string name="offline_status_synced">%1$s · alles übertragen</string>
+    <string name="offline_status_off">%1$s · am Rechner abgemeldet</string>
+    <string name="offline_status_closed">%1$s · geschlossen</string>
+    <string name="offline_delete_question">„%1$s“ von diesem Gerät löschen?</string>
+    <string name="offline_delete_pending">%1$d Bewertungen sind noch nicht übertragen und gehen verloren. Wenn möglich vorher synchronisieren.</string>
+    <string name="offline_saved">Für offline gespeichert</string>
+    <string name="sync_running">Synchronisiere …</string>
+    <string name="sync_done">Übertragen: %1$d Bewertungen</string>
+    <string name="sync_unreachable">Tapinion auf dem Rechner ist nicht erreichbar – die Bewertungen bleiben auf diesem Gerät.</string>
+    <string name="unreachable">Tapinion ist nicht erreichbar unter %1$s. Ist der Rechner eingeschaltet und im selben WLAN?</string>
 </resources>

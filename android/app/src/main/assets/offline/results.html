@@ -1,0 +1,116 @@
+<!doctype html>
+<!-- Copyright (C) 2026 Markus Wilhelm, mw-research — SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Results of an offline event inside the Android app: counts only, no single ratings. -->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+  :root { --brand: #0e7490; --on-brand: #fff; --good: #2e9e5b; --mid: #f0b429; --bad: #d64545; --passive: #a7b1bd; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f4f6f9; color: #17202b; font-family: system-ui, -apple-system, Roboto, sans-serif; font-size: 16px; }
+  header { background: #fff; border-bottom: 3px solid var(--brand); padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+  header img { height: 34px; max-width: 50vw; object-fit: contain; }
+  header button { margin-left: auto; border: 1px solid var(--brand); color: var(--brand); background: #fff; border-radius: 8px; padding: 8px 14px; font-size: 15px; }
+  main { max-width: 900px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.4rem; margin: .2rem 0; }
+  .muted { color: #5c6878; font-size: .9rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: #fff; border: 1px solid #dde3ea; border-radius: 10px; padding: 14px 16px; }
+  .card h2 { font-size: 1rem; margin: 0 0 4px; }
+  .score { font-size: 2.6rem; font-weight: 700; line-height: 1.2; }
+  .pos { color: var(--good); } .neg { color: var(--bad); }
+  .bar { display: flex; height: 18px; border-radius: 5px; overflow: hidden; background: #dde3ea; gap: 2px; margin: 10px 0; }
+  .bar span { display: block; height: 100%; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 4px 0; } td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; }
+  .promoters, .happy { background: var(--good); } .passives { background: var(--passive); }
+  .neutral { background: var(--mid); } .detractors, .unhappy { background: var(--bad); }
+  .note { margin-top: 14px; }
+</style>
+</head>
+<body>
+<header><img id="logo" alt=""><button id="back"></button></header>
+<main>
+  <h1 id="name"></h1>
+  <p class="muted" id="meta"></p>
+  <div class="grid">
+    <section class="card" id="here"></section>
+    <section class="card" id="all"></section>
+  </div>
+  <p class="muted note" id="note"></p>
+</main>
+<script>
+(function () {
+  "use strict";
+  var app = window.TapinionApp;
+  var token = decodeURIComponent(location.hash.slice(1));
+  var b = JSON.parse(app.bundle(token));
+  var votes = JSON.parse(app.votes(token));
+  var de = (navigator.language || "de").toLowerCase().indexOf("de") === 0;
+  var T = de ? {
+    back: "Zurück", here: "Auf diesem Gerät", all: "Gesamt", asof: "Stand der letzten Synchronisation: ",
+    ratings: "Bewertungen", waiting: " davon warten noch auf die Übertragung", none: "Noch keine Bewertungen.",
+    nps: "Net Promoter Score", smiley: "Zufriedenheitssaldo",
+    promoters: "Promotoren (9–10)", passives: "Indifferente (7–8)", detractors: "Detraktoren (0–6)",
+    happy: "Zufrieden", neutral: "Neutral", unhappy: "Unzufrieden",
+    note: "Die vollständige Auswertung mit Berichten gibt es in Tapinion auf dem Rechner."
+  } : {
+    back: "Back", here: "On this device", all: "Overall", asof: "As of the last sync: ",
+    ratings: "ratings", waiting: " still waiting to be transferred", none: "No ratings yet.",
+    nps: "Net Promoter Score", smiley: "Satisfaction balance",
+    promoters: "Promoters (9–10)", passives: "Passives (7–8)", detractors: "Detractors (0–6)",
+    happy: "Satisfied", neutral: "Neutral", unhappy: "Dissatisfied",
+    note: "The full results with reports are in Tapinion on the computer."
+  };
+  document.documentElement.style.setProperty("--brand", b.brand.primary || "#0e7490");
+  document.getElementById("logo").src = b.brand.logo;
+  document.getElementById("back").textContent = T.back;
+  document.getElementById("back").onclick = function () { app.close(); };
+  document.getElementById("name").textContent = b.event.name;
+  document.getElementById("meta").textContent = b.event.date;
+  document.getElementById("note").textContent = T.note;
+  var nps = b.event.mode === "nps";
+
+  function compute(values) {
+    var keys = nps ? ["promoters", "passives", "detractors"] : ["happy", "neutral", "unhappy"];
+    var c = {}; keys.forEach(function (k) { c[k] = 0; });
+    values.forEach(function (v) {
+      if (nps) { var n = parseInt(v, 10); c[n >= 9 ? "promoters" : n >= 7 ? "passives" : "detractors"]++; }
+      else if (c[v] !== undefined) c[v]++;
+    });
+    var total = values.length;
+    var plus = nps ? c.promoters : c.happy, minus = nps ? c.detractors : c.unhappy;
+    return { n: total, score: total ? Math.round((plus - minus) / total * 100) : null,
+             groups: keys.map(function (k) { return { key: k, count: c[k], share: total ? c[k] / total * 100 : 0 }; }) };
+  }
+
+  function render(el, title, r, sub) {
+    var s = r.score === null ? "–" : (r.score > 0 ? "+" + r.score : String(r.score));
+    var html = "<h2>" + title + "</h2><div class='muted'>" + (nps ? T.nps : T.smiley) + "</div>" +
+      "<div class='score " + (r.score > 0 ? "pos" : r.score < 0 ? "neg" : "") + "'>" + s + "</div>" +
+      "<div class='muted'>" + r.n + " " + T.ratings + (sub || "") + "</div>";
+    if (r.n) {
+      html += "<div class='bar'>" + r.groups.map(function (g) { return g.count ? "<span class='" + g.key + "' style='width:" + g.share + "%'></span>" : ""; }).join("") + "</div><table>";
+      r.groups.forEach(function (g) {
+        html += "<tr><td><span class='dot " + g.key + "'></span>" + T[g.key] + "</td><td class='n'>" + g.count + "</td><td class='n'>" +
+          g.share.toFixed(1).replace(".", de ? "," : ".") + " %</td></tr>";
+      });
+      html += "</table>";
+    } else html += "<p class='muted'>" + T.none + "</p>";
+    el.innerHTML = html;
+  }
+
+  var waiting = votes.filter(function (v) { return !v.sent; }).length;
+  render(document.getElementById("here"), T.here, compute(votes.map(function (v) { return v.value; })),
+         waiting ? " · " + waiting + T.waiting : "");
+  var all = b.result || { n: 0, score: null, groups: [] };
+  render(document.getElementById("all"), T.all, { n: all.n, score: all.score, groups: (all.groups || []).map(function (g) {
+    return { key: g.key, count: g.count, share: g.share };
+  }) }, "<br>" + T.asof + (b.server && b.server.time ? b.server.time.replace("T", " ").slice(0, 16) : ""));
+})();
+</script>
+</body>
+</html>

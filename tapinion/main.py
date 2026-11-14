@@ -842,14 +842,17 @@ def kiosk_form(request: Request, token: str, lang: str | None = None):
     return render(request, "_kiosk_vote.html", user=None, e=event, lang=kiosk_lang(request, event, lang))
 
 
+OFFLINE_DAYS = 90
+
+
 def parse_client_time(ts):
-    """Timestamp of a vote that was queued offline on the device; accepted within the last 14 days."""
+    """Timestamp of a vote collected offline on the device; accepted within the last 90 days."""
     try:
         when = datetime.fromisoformat(ts).replace(microsecond=0, tzinfo=None)
     except (TypeError, ValueError):
         return None
     now = datetime.now()
-    if now - timedelta(days=14) <= when <= now + timedelta(minutes=5):
+    if now - timedelta(days=OFFLINE_DAYS) <= when <= now + timedelta(minutes=5):
         return when.isoformat(sep=" ")
     return None
 
@@ -870,7 +873,7 @@ async def kiosk_vote(request: Request, token: str):
     klang = kiosk_lang(request, event, form.get("lang"))
     value = form.get("value", "")
     allowed = db.NPS_VALUES if event["mode"] == "nps" else db.SMILEY_VALUES
-    if not event["active"]:
+    if not event["active"] and not form.get("queued"):
         return render(request, "_kiosk_vote.html", user=None, e=event, lang=klang)
     if value not in allowed:
         raise HTTPException(400, i18n.translate(klang, "kiosk.invalid"))
@@ -1037,7 +1040,113 @@ async def user_delete(request: Request, user_id: int):
 
 @app.get("/healthz", include_in_schema=False)
 def healthz():
-    return {"status": "ok", "version": __version__}
+    with db.session() as conn:
+        return {"status": "ok", "version": __version__, "instance": db.instance_id(conn)}
+
+
+# --- device sync API (offline events in the apps) --------------------------
+# An app that has opened a kiosk (and so holds a device key) downloads everything needed to run
+# the kiosk without the computer, and later sends the ratings it collected. Authentication: the
+# device key in the X-Kiosk-Device header. Ratings carry a client id, so sending twice is harmless.
+
+KIOSK_TEXT_KEYS = ("kiosk.thanks", "kiosk.closed", "kiosk.closed_thanks", "kiosk.nps_low", "kiosk.nps_high",
+                   "kiosk.pin_title_exit", "kiosk.pin_title_unlock", "kiosk.pin_wrong", "kiosk.back_to_vote",
+                   "kiosk.clear", "kiosk.exit", "kiosk.language", "group.happy", "group.neutral", "group.unhappy",
+                   "kiosk.offline_badge")
+
+
+def api_device(request, token, include_revoked=False):
+    with db.session() as conn:
+        event = db.get_event_by_token(conn, token)
+        if not event:
+            raise HTTPException(404, "unknown kiosk")
+        device = db.device_for(conn, event["id"], request.headers.get("X-Kiosk-Device"), include_revoked)
+    if not device:
+        raise HTTPException(403, "device not registered or switched off")
+    return event, device
+
+
+@app.get("/api/kiosk/{token}")
+def api_kiosk_bundle(request: Request, token: str):
+    """Everything an app needs to run this kiosk offline."""
+    import base64
+    import hashlib
+
+    event, device = api_device(request, token)
+    with db.session() as conn:
+        brand = branding.get(conn)
+        asset = db.get_asset(conn, "logo")
+        instance = db.instance_id(conn)
+        db.touch_device(conn, device["id"])
+        values = [r["value"] for r in db.responses_for(conn, event["id"])]
+    # overall result as counts only (like the organizer view), no single ratings or times
+    result = stats.result_for(event["mode"], values)
+    if asset:
+        logo = f"data:{asset['mime']};base64," + base64.b64encode(asset["data"]).decode()
+    else:
+        logo = "data:image/svg+xml;base64," + base64.b64encode((BASE / "static" / "logo.svg").read_bytes()).decode()
+    salt = secrets.token_hex(8)
+    pin_hash = hashlib.sha256((salt + event["kiosk_pin"]).encode()).hexdigest() if event["kiosk_pin"] else ""
+    return {
+        "server": {"instance": instance, "version": __version__, "time": db.now_iso()},
+        "device": {"id": device["id"], "name": device["name"]},
+        "event": {
+            "token": event["kiosk_token"], "name": event["name"], "date": event["event_date"], "mode": event["mode"],
+            "active": bool(event["active"]), "kiosk_lang": event["kiosk_lang"],
+            "question": {lang: i18n.question_of(event, lang) for lang in ("de", "en")},
+            "pin": {"salt": salt, "sha256": pin_hash},
+        },
+        "brand": {"name": brand["name"], "primary": brand["primary"], "on_primary": brand["on_primary"],
+                  "accent": brand["accent"], "logo": logo},
+        "texts": {lang: {k: i18n.translate(lang, k) for k in KIOSK_TEXT_KEYS} for lang in ("de", "en")},
+        "result": result,
+    }
+
+
+@app.post("/api/kiosk/{token}/pair")
+async def api_kiosk_pair(request: Request, token: str):
+    """An app keeps an event for offline use with its own device key, so leaving the kiosk on
+    the device (which switches the kiosk's key off) does not affect the offline copy."""
+    event, device = api_device(request, token)
+    try:
+        name = str((await request.json()).get("name", ""))[:40].strip()
+    except Exception:
+        name = ""
+    lang = event["kiosk_lang"]
+    name = name or i18n.translate(lang, "devices.offline_name", name=device["name"])
+    with db.session() as conn:
+        did, secret = db.create_device(conn, event["id"], name)
+    return {"device": secret, "id": did, "name": name}
+
+
+@app.post("/api/kiosk/{token}/votes")
+async def api_kiosk_votes(request: Request, token: str):
+    """Ratings collected on the device. Returns which ids are stored (also earlier duplicates)."""
+    event, device = api_device(request, token, include_revoked=True)
+    try:
+        payload = await request.json()
+        votes = payload["votes"]
+        assert isinstance(votes, list) and len(votes) <= 5000
+    except Exception:
+        raise HTTPException(400, "expected {\"votes\": [...]}")
+    allowed = db.NPS_VALUES if event["mode"] == "nps" else db.SMILEY_VALUES
+    accepted, rejected = [], []
+    with db.session() as conn:
+        for v in votes:
+            cid = str(v.get("id", ""))[:64]
+            when = parse_client_time(v.get("ts"))
+            ok = cid and v.get("value") in allowed and when
+            if ok and device["revoked"]:
+                ok = bool(device["revoked_at"]) and when <= device["revoked_at"]
+            if not ok:
+                rejected.append(cid)
+                continue
+            db.add_response(conn, event["id"], v["value"], when, device["id"], cid)
+            accepted.append(cid)
+        if not device["revoked"]:
+            db.touch_device(conn, device["id"])
+    return {"accepted": accepted, "rejected": rejected, "event_active": bool(event["active"]),
+            "device_active": not device["revoked"]}
 
 
 @app.exception_handler(HTTPException)

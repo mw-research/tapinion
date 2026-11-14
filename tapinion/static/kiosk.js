@@ -18,6 +18,10 @@
     if (device) localStorage.setItem(RESUME, device);
     else device = localStorage.getItem(RESUME) || "";
   } catch (e) { /* storage blocked */ }
+  // Inside the Tapinion Android app: hand over the kiosk, so the app can keep it for offline use.
+  if (device && window.TapinionApp && window.TapinionApp.kioskReady) {
+    try { window.TapinionApp.kioskReady(token, device); } catch (e) { /* app too old */ }
+  }
   const stage = document.getElementById("stage");
   const pending = document.querySelector(".kiosk-pending");
   let voteHtml = null;     // last voting form, to restore it without the server

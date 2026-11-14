@@ -288,5 +288,7 @@
   "kiosk.device_name": "Name of this device (optional)",
   "kiosk.device_name_placeholder": "e.g. Exit north",
   "dashboard.per_device": "Per device",
-  "dashboard.no_device": "without device (older ratings)"
+  "dashboard.no_device": "without device (older ratings)",
+  "kiosk.offline_badge": "offline – ratings are kept on this device",
+  "devices.offline_name": "{name} (offline)"
 }

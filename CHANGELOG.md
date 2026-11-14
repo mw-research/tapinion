@@ -18,6 +18,9 @@ First public version.
 - Installers: Windows setup (shortcuts, optional autostart, firewall rule), macOS disk image, Linux AppImage.
 - Desktop app with QR codes for tablets in the same network; a second start opens the running instance.
 - Android kiosk app: finds Tapinion in the Wi-Fi by itself (DNS-SD), QR code as main action, full screen, screen on, optional app pinning;
-  keeps the running kiosk on the device and opens it without the computer, also after a restart.
+  offline mode: events opened in the app are kept on the device (own device key), the kiosk runs without
+  the computer, results on the device, sync of ratings exactly once when the computer is reachable again;
+  finds a computer with a new address again in the Wi-Fi (installation id); events can be deleted in the app.
+- Device sync API (`/api/kiosk/<token>`, `/pair`, `/votes`) and installation id in `/healthz`.
 - Kiosk on the base computer: full-screen browser window from the desktop app; full-screen button in the kiosk.
 - Docker image and Kubernetes manifest.

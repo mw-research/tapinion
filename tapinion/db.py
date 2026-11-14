@@ -7,7 +7,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS responses (
     event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     created_at TEXT NOT NULL,
     value TEXT NOT NULL,
-    device_id INTEGER REFERENCES devices(id) ON DELETE SET NULL
+    device_id INTEGER REFERENCES devices(id) ON DELETE SET NULL,
+    client_id TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_responses_event ON responses(event_id, created_at);
 CREATE TABLE IF NOT EXISTS settings (
@@ -106,6 +107,13 @@ def init_db() -> None:
         columns = {r[1] for r in conn.execute("PRAGMA table_info(responses)")}
         if "device_id" not in columns:  # schema 2 -> 3
             conn.execute("ALTER TABLE responses ADD COLUMN device_id INTEGER REFERENCES devices(id) ON DELETE SET NULL")
+        if "client_id" not in columns:  # schema 3 -> 4
+            conn.execute("ALTER TABLE responses ADD COLUMN client_id TEXT")
+        # a rating sent twice by a device (e.g. a sync interrupted halfway) is stored once
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_responses_client "
+                     "ON responses(device_id, client_id) WHERE client_id IS NOT NULL")
+        if not conn.execute("SELECT 1 FROM settings WHERE key = 'instance_id'").fetchone():
+            conn.execute("INSERT INTO settings (key, value) VALUES ('instance_id', ?)", (secrets.token_hex(8),))
         conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 
@@ -248,11 +256,19 @@ def select_events(conn, date_from=None, date_to=None, mode=None, only_with_data=
 
 # --- responses -------------------------------------------------------------
 
-def add_response(conn, event_id, value, created_at=None, device_id=None):
-    conn.execute(
-        "INSERT INTO responses (event_id, created_at, value, device_id) VALUES (?, ?, ?, ?)",
-        (event_id, created_at or now_iso(), value, device_id),
+def add_response(conn, event_id, value, created_at=None, device_id=None, client_id=None) -> bool:
+    """Store a rating; False if this device already sent the rating with this client_id."""
+    cur = conn.execute(
+        "INSERT OR IGNORE INTO responses (event_id, created_at, value, device_id, client_id) VALUES (?, ?, ?, ?, ?)",
+        (event_id, created_at or now_iso(), value, device_id, client_id),
     )
+    return cur.rowcount == 1
+
+
+def instance_id(conn) -> str:
+    """Fixed id of this installation; lets apps find their computer again at a new address."""
+    row = conn.execute("SELECT value FROM settings WHERE key = 'instance_id'").fetchone()
+    return row["value"] if row else ""
 
 
 def response_days(conn, event_id):

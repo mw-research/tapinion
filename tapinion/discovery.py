@@ -9,7 +9,7 @@ SERVICE_TYPE = "_tapinion._tcp.local."
 log = logging.getLogger("tapinion.discovery")
 
 
-def announce(port: int, ip: str | None, version: str):
+def announce(port: int, ip: str | None, version: str, instance: str = ""):
     """Register the service; returns a function that withdraws it. Never raises."""
     if not ip:
         return lambda: None
@@ -22,7 +22,7 @@ def announce(port: int, ip: str | None, version: str):
             f"Tapinion {host}.{SERVICE_TYPE}",
             addresses=[socket.inet_aton(ip)],
             port=port,
-            properties={"path": "/", "version": version, "host": host},
+            properties={"path": "/", "version": version, "host": host, "instance": instance},
             server=f"{host}.local.",
         )
         zc = Zeroconf(interfaces=[ip])

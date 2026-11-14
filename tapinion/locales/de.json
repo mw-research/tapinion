@@ -288,5 +288,7 @@
   "kiosk.device_name": "Name dieses Geräts (optional)",
   "kiosk.device_name_placeholder": "z. B. Ausgang Nord",
   "dashboard.per_device": "Je Gerät",
-  "dashboard.no_device": "ohne Gerät (ältere Bewertungen)"
+  "dashboard.no_device": "ohne Gerät (ältere Bewertungen)",
+  "kiosk.offline_badge": "offline – Bewertungen bleiben auf diesem Gerät",
+  "devices.offline_name": "{name} (offline)"
 }

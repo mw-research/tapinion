@@ -123,7 +123,11 @@ def main():
     from . import __version__
     from .discovery import announce
 
-    withdraw = announce(port, ip, __version__)  # lets the Android app find this computer
+    from . import db as _db
+
+    with _db.session() as conn:
+        instance = _db.instance_id(conn)
+    withdraw = announce(port, ip, __version__, instance)  # lets the Android app find this computer
     headless = os.environ.get("TAPINION_HEADLESS") == "1"  # servers, tests: no window, no browser
     if not headless:
         webbrowser.open(local)

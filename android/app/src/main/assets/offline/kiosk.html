@@ -1,0 +1,170 @@
+<!doctype html>
+<!-- Copyright (C) 2026 Markus Wilhelm, mw-research — SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Offline kiosk inside the Android app: runs from the event data stored on the device; ratings
+     are stored by the app and sent to the computer when it is reachable again. -->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<style>
+  :root { --brand: #0e7490; --on-brand: #fff; --good: #2e9e5b; --mid: #f0b429; --bad: #d64545; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #fff; color: #17202b; font-family: system-ui, -apple-system, Roboto, sans-serif;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; overflow: hidden; }
+  .shell { height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+  .top { display: flex; justify-content: space-between; align-items: center; padding: clamp(.6rem, 2vh, 1.4rem) clamp(1rem, 3vw, 2.2rem); border-top: 6px solid var(--brand); }
+  .logo { height: clamp(36px, 8vh, 84px); max-width: 45vw; object-fit: contain; }
+  .tools { display: flex; align-items: center; gap: .6rem; }
+  .lang { display: flex; border: 1px solid #dde3ea; border-radius: 8px; overflow: hidden; }
+  .lang button { border: none; background: #fff; color: #5c6878; padding: .45rem .7rem; font-size: .95rem; min-width: 44px; }
+  .lang button.on { background: var(--brand); color: var(--on-brand); }
+  .exit { border: none; background: transparent; color: #c5ccd4; font-size: 1.6rem; width: 52px; height: 52px; border-radius: 50%; }
+  .stage { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 clamp(1rem, 4vw, 3rem); text-align: center; min-height: 0; }
+  .foot { text-align: center; color: #9aa6b4; font-size: .8rem; padding: .4rem; }
+  h1.q { font-size: clamp(1.4rem, min(4.2vw, 6vh), 3.2rem); max-width: 26ch; margin: 0 0 clamp(1.2rem, 6vh, 4rem); line-height: 1.2; font-weight: 650; }
+  .smileys { display: flex; justify-content: center; gap: clamp(1rem, 6vw, 5rem); }
+  .smiley { border: none; background: none; padding: 0; width: min(24vw, 34vh, 260px); border-radius: 50%; }
+  .smiley svg { width: 100%; display: block; }
+  .nps { display: grid; grid-template-columns: repeat(11, 1fr); gap: clamp(4px, 1vw, 14px); width: 100%; max-width: 1400px; }
+  .nps button { aspect-ratio: 1; border: none; border-radius: clamp(8px, 1.4vw, 16px); font-size: clamp(1.1rem, min(3.4vw, 6vh), 3rem); font-weight: 700; color: #fff; }
+  .scale { display: flex; justify-content: space-between; color: #5c6878; margin-top: .8rem; font-size: clamp(.85rem, 1.8vw, 1.3rem); width: 100%; max-width: 1400px; }
+  @media (orientation: portrait) and (max-width: 900px) { .nps { grid-template-columns: repeat(6, 1fr); } .smiley { width: min(28vw, 30vh, 240px); } }
+  button:active { transform: scale(.92); }
+  .thanks svg { width: clamp(110px, min(20vw, 26vh), 220px); }
+  .thanks h1 { font-size: clamp(1.6rem, min(4vw, 6vh), 3rem); }
+  .pin { display: flex; flex-direction: column; align-items: center; }
+  .pin h1 { font-size: clamp(1.1rem, 2.4vw, 1.6rem); margin: 0 0 .6rem; }
+  .pin .event { font-weight: 650; font-size: clamp(1.1rem, 2.5vw, 1.6rem); margin: 0 0 .4rem; }
+  .display { font-size: 2rem; text-align: center; letter-spacing: .4em; width: 260px; border: 2px solid #dde3ea; border-radius: 10px; padding: .3rem; min-height: 3rem; }
+  .err { color: var(--bad); min-height: 1.4em; margin: .4rem 0 0; }
+  .keys { display: grid; grid-template-columns: repeat(3, clamp(64px, 11vh, 84px)); gap: clamp(8px, 1.5vh, 12px); margin-top: .6rem; }
+  .keys button { height: clamp(64px, 11vh, 84px); font-size: 1.8rem; border: 1px solid #dde3ea; border-radius: 12px; background: #f6f8fa; color: #17202b; }
+  .keys .ok { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
+  .back { border: none; background: none; color: var(--brand); font-size: 1rem; margin-top: .8rem; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <img class="logo" id="logo" alt="">
+    <div class="tools">
+      <div class="lang" id="lang"></div>
+      <button class="exit" id="exit" aria-label="exit">⋯</button>
+    </div>
+  </header>
+  <main class="stage" id="stage"></main>
+  <footer class="foot" id="foot"></footer>
+</div>
+<script>
+(function () {
+  "use strict";
+  var app = window.TapinionApp;
+  var token = decodeURIComponent(location.hash.slice(1).split("&")[0]);
+  var startLocked = location.hash.indexOf("unlock=1") >= 0;
+  var b = JSON.parse(app.bundle(token));
+  var lang = b.event.kiosk_lang || "de";
+  var stage = document.getElementById("stage");
+  var timer = null;
+
+  document.documentElement.style.setProperty("--brand", b.brand.primary || "#0e7490");
+  document.documentElement.style.setProperty("--on-brand", b.brand.on_primary || "#fff");
+  document.getElementById("logo").src = b.brand.logo;
+
+  function t(key) { return (b.texts[lang] && b.texts[lang][key]) || key; }
+  function esc(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+  function foot() {
+    var n = app.pending(token);
+    document.getElementById("foot").textContent = t("kiosk.offline_badge") + (n > 0 ? " · " + n : "");
+  }
+
+  function langButtons() {
+    var box = document.getElementById("lang");
+    box.innerHTML = "";
+    ["de", "en"].forEach(function (code) {
+      var btn = document.createElement("button");
+      btn.textContent = code.toUpperCase();
+      if (code === lang) btn.className = "on";
+      btn.onclick = function () { lang = code; langButtons(); if (stage.dataset.mode === "vote") vote(); else if (stage.dataset.mode) pin(stage.dataset.mode); };
+      box.appendChild(btn);
+    });
+  }
+
+  var MOUTHS = { happy: ["var(--good)", "M30 62 Q50 80 70 62"], neutral: ["var(--mid)", "M30 68 L70 68"], unhappy: ["var(--bad)", "M30 74 Q50 56 70 74"] };
+
+  function vote() {
+    clearTimeout(timer);
+    stage.dataset.mode = "vote";
+    if (!b.event.active) {
+      stage.innerHTML = "<h1 class='q'>" + esc(t("kiosk.closed")) + "</h1><p>" + esc(t("kiosk.closed_thanks")) + "</p>";
+      return;
+    }
+    var html = "<h1 class='q'>" + esc(b.event.question[lang] || b.event.question.de) + "</h1>";
+    if (b.event.mode === "nps") {
+      html += "<div class='nps'>";
+      for (var i = 0; i <= 10; i++) html += "<button data-v='" + i + "' style='background:hsl(" + (i * 12) + " 62% 42%)'>" + i + "</button>";
+      html += "</div><div class='scale'><span>" + esc(t("kiosk.nps_low")) + "</span><span>" + esc(t("kiosk.nps_high")) + "</span></div>";
+    } else {
+      html += "<div class='smileys'>";
+      ["happy", "neutral", "unhappy"].forEach(function (k) {
+        var m = MOUTHS[k];
+        html += "<button class='smiley' data-v='" + k + "' aria-label='" + esc(t("group." + k)) + "'><svg viewBox='0 0 100 100'>" +
+          "<circle cx='50' cy='50' r='46' fill='" + m[0] + "'/><circle cx='35' cy='38' r='6' fill='#1b1b1b'/><circle cx='65' cy='38' r='6' fill='#1b1b1b'/>" +
+          "<path d='" + m[1] + "' stroke='#1b1b1b' stroke-width='6' fill='none' stroke-linecap='round'/></svg></button>";
+      });
+      html += "</div>";
+    }
+    stage.innerHTML = html;
+    stage.querySelectorAll("[data-v]").forEach(function (btn) {
+      btn.onclick = function () { app.vote(token, btn.dataset.v, lang); thanks(); };
+    });
+    foot();
+  }
+
+  function thanks() {
+    stage.dataset.mode = "thanks";
+    stage.innerHTML = "<div class='thanks'><svg viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='var(--good)'/>" +
+      "<path d='M28 52 L44 68 L74 36' stroke='#fff' stroke-width='9' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" +
+      "<h1>" + esc(t("kiosk.thanks")) + "</h1></div>";
+    foot();
+    timer = setTimeout(vote, 4000);
+  }
+
+  function pin(mode) {
+    clearTimeout(timer);
+    stage.dataset.mode = mode;
+    var value = "";
+    stage.innerHTML = (mode === "unlock" ? "<p class='event'>" + esc(b.event.name) + "</p>" : "") +
+      "<div class='pin'><h1>" + esc(t(mode === "unlock" ? "kiosk.pin_title_unlock" : "kiosk.pin_title_exit")) + "</h1>" +
+      "<div class='display' id='d'></div><p class='err' id='e'></p><div class='keys' id='k'></div>" +
+      (mode === "exit" ? "<button class='back' id='bk'>" + esc(t("kiosk.back_to_vote")) + "</button>" : "") + "</div>";
+    var keys = document.getElementById("k");
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "OK"].forEach(function (k) {
+      var btn = document.createElement("button");
+      btn.textContent = k;
+      if (k === "OK") btn.className = "ok";
+      btn.onclick = function () {
+        if (k === "C") value = "";
+        else if (k === "OK") {
+          if (app.checkPin(token, value)) {
+            if (mode === "unlock") { app.kioskStarted(token); vote(); } else { app.exitKiosk(token); }
+            return;
+          }
+          value = "";
+          document.getElementById("e").textContent = t("kiosk.pin_wrong");
+        } else if (value.length < 8) value += k;
+        document.getElementById("d").textContent = value.replace(/./g, "•");
+      };
+      keys.appendChild(btn);
+    });
+    var bk = document.getElementById("bk");
+    if (bk) bk.onclick = vote;
+  }
+
+  document.getElementById("exit").onclick = function () { if (stage.dataset.mode !== "unlock") pin("exit"); };
+  langButtons();
+  if (startLocked) pin("unlock"); else vote();
+  setInterval(foot, 15000);
+})();
+</script>
+</body>
+</html>

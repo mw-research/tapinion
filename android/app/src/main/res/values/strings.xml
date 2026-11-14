@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Tapinion</string>
-    <string name="setup_intro">Connect this device to Tapinion on your computer. Scan the QR code shown in Tapinion – or pick it below.</string>
+    <string name="setup_intro">Scan the QR code of an event in Tapinion. It then runs on this device – and stays available offline, even without the computer.</string>
     <string name="setup_scan">Scan QR code</string>
     <string name="setup_scan_prompt">Point the camera at the Tapinion QR code</string>
     <string name="found_title">IN YOUR WI-FI</string>
@@ -20,4 +20,20 @@
     <string name="change_server_question">Connect to another Tapinion?</string>
     <string name="quit_question">Quit Tapinion?</string>
     <string name="quit">Quit</string>
+    <string name="offline_title">AVAILABLE OFFLINE</string>
+    <string name="offline_sync">Sync now</string>
+    <string name="offline_start">Start</string>
+    <string name="offline_results">Results</string>
+    <string name="offline_delete">Delete</string>
+    <string name="offline_status_pending">%1$s · %2$d ratings waiting to be transferred</string>
+    <string name="offline_status_synced">%1$s · everything transferred</string>
+    <string name="offline_status_off">%1$s · switched off on the computer</string>
+    <string name="offline_status_closed">%1$s · closed</string>
+    <string name="offline_delete_question">Delete “%1$s” from this device?</string>
+    <string name="offline_delete_pending">%1$d ratings have not been transferred yet and will be lost. Sync first, if possible.</string>
+    <string name="offline_saved">Saved for offline use</string>
+    <string name="sync_running">Syncing …</string>
+    <string name="sync_done">Transferred: %1$d ratings</string>
+    <string name="sync_unreachable">Tapinion on the computer is not reachable – the ratings stay on this device.</string>
+    <string name="unreachable">Tapinion is not reachable at %1$s. Is the computer switched on and in the same Wi-Fi?</string>
 </resources>
