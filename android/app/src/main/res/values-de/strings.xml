@@ -36,4 +36,6 @@
     <string name="sync_done">Übertragen: %1$d Bewertungen</string>
     <string name="sync_unreachable">Tapinion auf dem Rechner ist nicht erreichbar – die Bewertungen bleiben auf diesem Gerät.</string>
     <string name="unreachable">Tapinion ist nicht erreichbar unter %1$s. Ist der Rechner eingeschaltet und im selben WLAN?</string>
+    <string name="connecting_title">Verbinde mit Tapinion …</string>
+    <string name="connecting_cancel">Abbrechen – zur Übersicht</string>
 </resources>

@@ -69,7 +69,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String SERVICE_TYPE = "_tapinion._tcp";
     private static final long SYNC_EVERY_MS = 60_000;
 
-    private enum Mode { SETUP, WEB, OFFLINE_KIOSK, RESULTS }
+    private enum Mode { SETUP, CONNECTING, WEB, OFFLINE_KIOSK, RESULTS }
+    private static final long PAGE_TIMEOUT_MS = 12_000;  // a page that takes longer counts as unreachable
 
     private SharedPreferences prefs;
     private OfflineStore store;
@@ -80,6 +81,18 @@ public class MainActivity extends AppCompatActivity {
     private String origin;
     private boolean pinned;
     private volatile boolean syncing;
+    private int attempt;             // connection attempts; a cancelled one is ignored when it finishes
+    private int webFailures;         // consecutive failed page loads
+    private boolean pageFinished;
+    private boolean kioskRunning;    // the web kiosk is unlocked and running (reported by the page)
+    private boolean offlineStarted;  // the offline kiosk is past its PIN screen
+    private final Runnable pageWatchdog = () -> {
+        if (mode == Mode.WEB && !pageFinished && web != null) {
+            String u = web.getUrl() == null ? prefs.getString(KEY_URL, "") : web.getUrl();
+            web.stopLoading();
+            unreachable(u);
+        }
+    };
 
     // start screen
     private LinearLayout foundList, offlineList;
@@ -132,7 +145,56 @@ public class MainActivity extends AppCompatActivity {
         } else if (url == null) {
             showSetup(null);
         } else {
-            showWeb(kiosk != null ? kiosk : url);
+            showConnecting(kiosk != null ? kiosk : url);
+        }
+    }
+
+    /**
+     * Check that the computer answers before loading anything: at most a few seconds, then the
+     * kiosk (computer reachable, also at a new address), the offline kiosk, or the start screen.
+     * Can be cancelled at any time.
+     */
+    private void showConnecting(String target) {
+        stopPinning();
+        stopDiscovery();
+        main.removeCallbacks(pageWatchdog);
+        mode = Mode.CONNECTING;
+        web = null;
+        foundList = offlineList = null;
+        setContentView(R.layout.activity_connecting);
+        showSystemBars(true);
+        String o = originOf(target);
+        ((TextView) findViewById(R.id.connecting_address)).setText(o.replace("http://", ""));
+        int my = ++attempt;
+        findViewById(R.id.connecting_cancel).setOnClickListener(v -> {
+            attempt++;
+            showSetup(null);
+        });
+        String instance = prefs.getString(KEY_INSTANCE, null);
+        new Thread(() -> {
+            String found = OfflineStore.instanceAt(o) != null ? o : null;
+            if (found == null && instance != null) found = Rediscover.find(this, instance, 5_000);
+            String result = found;
+            runOnUiThread(() -> {
+                if (my != attempt || mode != Mode.CONNECTING) return;  // cancelled meanwhile
+                if (result != null) {
+                    if (!result.equals(o)) movedTo(instance, o, result);
+                    showWeb(result + target.substring(o.length()));
+                } else {
+                    continueOffline(target);
+                }
+            });
+        }, "tapinion-connect").start();
+    }
+
+    /** Computer not reachable: continue a running kiosk from the device, else the start screen. */
+    private void continueOffline(String failedUrl) {
+        String token = tokenOf(prefs.getString(KEY_LAST_KIOSK, null));
+        if (token == null) token = tokenOf(failedUrl);
+        if (token != null && store.has(token)) {
+            showOfflineKiosk(token, false);
+        } else {
+            showSetup(getString(R.string.unreachable, originOf(failedUrl).replace("http://", "")));
         }
     }
 
@@ -155,6 +217,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showSetup(String error) {
         stopPinning();
+        main.removeCallbacks(pageWatchdog);
         mode = Mode.SETUP;
         web = null;
         setContentView(R.layout.activity_setup);
@@ -256,7 +319,7 @@ public class MainActivity extends AppCompatActivity {
             String instance = OfflineStore.instanceAt(base);
             if (instance != null && !instance.isEmpty()) prefs.edit().putString(KEY_INSTANCE, instance).apply();
         });
-        showWeb(raw);
+        showConnecting(raw);
     }
 
     // --- synchronisation --------------------------------------------------------
@@ -415,7 +478,10 @@ public class MainActivity extends AppCompatActivity {
     private final class WebBridge {
         @JavascriptInterface
         public void kioskReady(String token, String kioskKey) {
-            runOnUiThread(() -> startPinning());  // the kiosk is unlocked and running (not on the PIN page)
+            runOnUiThread(() -> {  // the kiosk is unlocked and running (not on the PIN page)
+                kioskRunning = true;
+                startPinning();
+            });
             String o = origin;
             if (o == null || token == null || kioskKey == null || store.has(token)) return;
             background.execute(() -> {
@@ -435,6 +501,8 @@ public class MainActivity extends AppCompatActivity {
     private void showWeb(String url) {
         stopDiscovery();
         mode = Mode.WEB;
+        pageFinished = false;
+        kioskRunning = false;
         foundList = offlineList = null;
         origin = originOf(url);
         web = new WebView(this);
@@ -458,11 +526,18 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onPageStarted(WebView view, String page, Bitmap favicon) {
+                kioskRunning = false;
+                pageFinished = false;
+                main.removeCallbacks(pageWatchdog);
+                main.postDelayed(pageWatchdog, PAGE_TIMEOUT_MS);
                 updatePinning(page);
             }
 
             @Override
             public void onPageFinished(WebView view, String page) {
+                pageFinished = true;
+                webFailures = 0;
+                main.removeCallbacks(pageWatchdog);
                 if (isStartPage(page)) {
                     view.clearHistory();  // "back" must not lead into a kiosk that was left with the PIN
                     prefs.edit().remove(KEY_LAST_KIOSK).apply();
@@ -478,30 +553,19 @@ public class MainActivity extends AppCompatActivity {
         });
         setContentView(web);
         showSystemBars(false);
+        main.removeCallbacks(pageWatchdog);
+        main.postDelayed(pageWatchdog, PAGE_TIMEOUT_MS);
         web.loadUrl(url);
     }
 
-    /** The computer did not answer: look for it at a new address, else continue offline. */
+    /** The computer did not answer: check once more (new address?), else continue offline. */
     private void unreachable(String failedUrl) {
+        if (mode != Mode.WEB) return;  // watchdog and error can both report the same failure
+        main.removeCallbacks(pageWatchdog);
         stopPinning();
-        String instance = prefs.getString(KEY_INSTANCE, null);
-        String oldOrigin = originOf(failedUrl);
-        background.execute(() -> {
-            String moved = instance == null ? null : Rediscover.find(this, instance, 6_000);
-            runOnUiThread(() -> {
-                if (moved != null && !moved.equals(oldOrigin)) {
-                    movedTo(instance, oldOrigin, moved);
-                    showWeb(moved + failedUrl.substring(oldOrigin.length()));
-                    return;
-                }
-                String token = tokenOf(prefs.getString(KEY_LAST_KIOSK, null));
-                if (token != null && store.has(token)) {
-                    showOfflineKiosk(token, false);  // the kiosk was running: continue on the device
-                } else {
-                    showSetup(getString(R.string.unreachable, oldOrigin.replace("http://", "")));
-                }
-            });
-        });
+        webFailures++;
+        if (webFailures >= 2) continueOffline(failedUrl);
+        else showConnecting(failedUrl);
     }
 
     // --- offline kiosk and results (from the device) ------------------------------
@@ -521,7 +585,10 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void kioskStarted(String token) {
             prefs.edit().putString(KEY_RUNNING_OFFLINE, token).apply();
-            runOnUiThread(() -> startPinning());
+            runOnUiThread(() -> {
+                offlineStarted = true;
+                startPinning();
+            });
         }
 
         @JavascriptInterface
@@ -557,7 +624,9 @@ public class MainActivity extends AppCompatActivity {
     /** Run the kiosk of a stored event from the device; locked = ask for the PIN first. */
     private void showOfflineKiosk(String token, boolean locked) {
         stopDiscovery();
+        main.removeCallbacks(pageWatchdog);
         mode = Mode.OFFLINE_KIOSK;
+        offlineStarted = !locked;
         foundList = offlineList = null;
         web = null;
         WebView v = offlineWebView();
@@ -610,19 +679,27 @@ public class MainActivity extends AppCompatActivity {
     private void onBack() {
         switch (mode) {
             case OFFLINE_KIOSK:
-                return;  // left with the PIN only
+                if (!offlineStarted) showSetup(null);  // still on the PIN screen: back to the overview
+                return;  // a running kiosk is left with the PIN only
+            case CONNECTING:
+                attempt++;
+                showSetup(null);
+                return;
             case RESULTS:
                 showSetup(null);
                 return;
             case SETUP:
-                if (prefs.getString(KEY_URL, null) != null) showWeb(prefs.getString(KEY_URL, ""));
+                if (prefs.getString(KEY_URL, null) != null) showConnecting(prefs.getString(KEY_URL, ""));
                 else finishAndRemoveTask();
                 return;
             default:
                 break;
         }
         String path = web.getUrl() == null ? "" : Uri.parse(web.getUrl()).getPath();
-        if (path != null && path.startsWith("/k/")) return;  // the kiosk is left with the PIN only
+        if (path != null && path.startsWith("/k/")) {
+            if (!kioskRunning) showSetup(null);  // loading or PIN page: back to the overview
+            return;  // a running kiosk is left with the PIN only
+        }
         if (!isStartPage(web.getUrl()) && web.canGoBack()) {
             web.goBack();
             return;
