@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_PIN_APP = "pin_app";
     private static final String KEY_LAST_KIOSK = "last_kiosk";          // web kiosk that was running
     private static final String KEY_RUNNING_OFFLINE = "running_offline"; // offline kiosk that was running
+    private static final String KEY_ACTIVE_KIOSK = "active_kiosk";      // token of a kiosk that is unlocked; left with the PIN only
     private static final String SERVICE_TYPE = "_tapinion._tcp";
     private static final long SYNC_EVERY_MS = 60_000;
 
@@ -166,10 +167,9 @@ public class MainActivity extends AppCompatActivity {
         String o = originOf(target);
         ((TextView) findViewById(R.id.connecting_address)).setText(o.replace("http://", ""));
         int my = ++attempt;
-        findViewById(R.id.connecting_cancel).setOnClickListener(v -> {
-            attempt++;
-            showSetup(null);
-        });
+        TextView cancel = findViewById(R.id.connecting_cancel);
+        if (guardedToken() != null) cancel.setText(R.string.connecting_continue_offline);
+        cancel.setOnClickListener(v -> cancelConnecting());
         String instance = prefs.getString(KEY_INSTANCE, null);
         new Thread(() -> {
             String found = OfflineStore.instanceAt(o) != null ? o : null;
@@ -185,6 +185,24 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }, "tapinion-connect").start();
+    }
+
+    /** The token of a running kiosk that is stored on the device, else null. */
+    private String guardedToken() {
+        String token = prefs.getString(KEY_ACTIVE_KIOSK, null);
+        return token != null && store.has(token) ? token : null;
+    }
+
+    /** Leave the connecting screen: a running kiosk continues offline (PIN to leave), else the overview. */
+    private void cancelConnecting() {
+        attempt++;
+        String token = guardedToken();
+        if (token != null) {
+            showOfflineKiosk(token, false);
+        } else {
+            prefs.edit().remove(KEY_ACTIVE_KIOSK).apply();  // nothing to protect on this device
+            showSetup(null);
+        }
     }
 
     /** Computer not reachable: continue a running kiosk from the device, else the start screen. */
@@ -478,6 +496,7 @@ public class MainActivity extends AppCompatActivity {
     private final class WebBridge {
         @JavascriptInterface
         public void kioskReady(String token, String kioskKey) {
+            prefs.edit().putString(KEY_ACTIVE_KIOSK, token).apply();
             runOnUiThread(() -> {  // the kiosk is unlocked and running (not on the PIN page)
                 kioskRunning = true;
                 startPinning();
@@ -540,7 +559,7 @@ public class MainActivity extends AppCompatActivity {
                 main.removeCallbacks(pageWatchdog);
                 if (isStartPage(page)) {
                     view.clearHistory();  // "back" must not lead into a kiosk that was left with the PIN
-                    prefs.edit().remove(KEY_LAST_KIOSK).apply();
+                    prefs.edit().remove(KEY_LAST_KIOSK).remove(KEY_ACTIVE_KIOSK).apply();
                 } else if (isKioskPage(page)) {
                     prefs.edit().putString(KEY_LAST_KIOSK, page).apply();
                 }
@@ -584,7 +603,7 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void kioskStarted(String token) {
-            prefs.edit().putString(KEY_RUNNING_OFFLINE, token).apply();
+            prefs.edit().putString(KEY_RUNNING_OFFLINE, token).putString(KEY_ACTIVE_KIOSK, token).apply();
             runOnUiThread(() -> {
                 offlineStarted = true;
                 startPinning();
@@ -593,7 +612,7 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void exitKiosk(String token) {
-            prefs.edit().remove(KEY_RUNNING_OFFLINE).apply();
+            prefs.edit().remove(KEY_RUNNING_OFFLINE).remove(KEY_ACTIVE_KIOSK).remove(KEY_LAST_KIOSK).apply();
             runOnUiThread(() -> showSetup(null));
         }
 
@@ -634,7 +653,7 @@ public class MainActivity extends AppCompatActivity {
         showSystemBars(false);
         v.loadUrl("file:///android_asset/offline/kiosk.html#" + Uri.encode(token) + (locked ? "&unlock=1" : ""));
         if (!locked) {
-            prefs.edit().putString(KEY_RUNNING_OFFLINE, token).apply();
+            prefs.edit().putString(KEY_RUNNING_OFFLINE, token).putString(KEY_ACTIVE_KIOSK, token).apply();
             startPinning();
         }
     }
@@ -682,8 +701,7 @@ public class MainActivity extends AppCompatActivity {
                 if (!offlineStarted) showSetup(null);  // still on the PIN screen: back to the overview
                 return;  // a running kiosk is left with the PIN only
             case CONNECTING:
-                attempt++;
-                showSetup(null);
+                cancelConnecting();
                 return;
             case RESULTS:
                 showSetup(null);
@@ -697,7 +715,9 @@ public class MainActivity extends AppCompatActivity {
         }
         String path = web.getUrl() == null ? "" : Uri.parse(web.getUrl()).getPath();
         if (path != null && path.startsWith("/k/")) {
-            if (!kioskRunning) showSetup(null);  // loading or PIN page: back to the overview
+            // PIN page of a kiosk that is not running yet: back to the overview. A running kiosk, also
+            // while a page reloads, is left with the PIN only (a hanging load ends after PAGE_TIMEOUT_MS).
+            if (!kioskRunning && prefs.getString(KEY_ACTIVE_KIOSK, null) == null) showSetup(null);
             return;  // a running kiosk is left with the PIN only
         }
         if (!isStartPage(web.getUrl()) && web.canGoBack()) {

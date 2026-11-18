@@ -38,4 +38,5 @@
     <string name="unreachable">Tapinion is not reachable at %1$s. Is the computer switched on and in the same Wi-Fi?</string>
     <string name="connecting_title">Connecting to Tapinion …</string>
     <string name="connecting_cancel">Cancel – to the overview</string>
+    <string name="connecting_continue_offline">Cancel – continue offline</string>
 </resources>

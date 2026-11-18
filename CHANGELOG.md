@@ -22,7 +22,8 @@ First public version.
   the computer, results on the device, sync of ratings exactly once when the computer is reachable again;
   finds a computer with a new address again in the Wi-Fi (installation id); events can be deleted in the app.
   Never waits on an unreachable computer: short connection check that can be cancelled, then the offline kiosk
-  or the start screen; back leaves loading and PIN pages, a running kiosk is left with the PIN only.
+  or the start screen; back leaves loading and PIN pages. A running kiosk is left with the PIN only, also when
+  the connection drops or the app restarts (cancel then continues the kiosk offline).
 - Device sync API (`/api/kiosk/<token>`, `/pair`, `/votes`) and installation id in `/healthz`.
 - Kiosk on the base computer: full-screen browser window from the desktop app; full-screen button in the kiosk.
 - Docker image and Kubernetes manifest.
