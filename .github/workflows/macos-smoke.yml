@@ -63,8 +63,7 @@ jobs:
           echo "--- Safari"; osascript -e 'tell application "Safari" to get URL of current tab of front window' || true
           osascript -e 'tell application "Safari" to get source of current tab of front window' 2>&1 | head -c 600 || true
           echo; echo "--- / via localhost (IPv6 first)"; curl -sv -m 5 -o /dev/null http://localhost:8765/ 2>&1 | grep -E "Trying|Connected|< HTTP|< location|refused" || true
-          echo "--- / via 127.0.0.1"; curl -s -m 5 -o /dev/null -w "%{http_code} %{redirect_url}
-" http://127.0.0.1:8765/ || true
+          echo "--- / via 127.0.0.1"; curl -s -m 5 -o /dev/null -w "%{http_code} %{redirect_url}\n" http://127.0.0.1:8765/ || true
           osascript -e 'tell application "Tapinion" to activate' || true
           sleep 2; screencapture -x shots/tapinion-activated.png || true
       - name: Log file
