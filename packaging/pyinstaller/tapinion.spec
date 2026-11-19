@@ -15,6 +15,8 @@ datas = [
     (str(PKG / "static"), "tapinion/static"),
     (str(PKG / "locales"), "tapinion/locales"),
 ]
+if any((PKG / "apk").glob("*.apk")):  # Android app, offered to tablets on /app
+    datas.append((str(PKG / "apk"), "tapinion/apk"))
 hidden = (
     collect_submodules("uvicorn")
     + collect_submodules("tapinion")

@@ -58,7 +58,7 @@
     <div class="qr">{{ svg | safe }}<p class="qr-url"><code>{{ url }}</code></p>
       <p class="pin-reminder">{{ t('wizard.tablet_pin', pin=event.kiosk_pin) }}</p></div>
     <ol class="howto">
-      <li><b>{{ t('wizard.howto_android_title') }}</b> {{ t('wizard.howto_android') }}</li>
+      <li><b>{{ t('wizard.howto_android_title') }}</b> {{ t('wizard.howto_android') }} <a href="/app" target="_blank">{{ t('app.link') }}</a></li>
       <li><b>{{ t('wizard.howto_ipad_title') }}</b> {{ t('wizard.howto_ipad') }}</li>
       <li><b>{{ t('wizard.howto_here_title') }}</b> {{ t('wizard.howto_here') }}</li>
     </ol>

@@ -46,8 +46,10 @@ bleiben erhalten, außer Sie wählen das Löschen.
 
 **Tablets** (im selben WLAN wie der Rechner):
 
-- **Android**: `tapinion-android-….apk` aus den Releases installieren (einmalig „Installation
-  unbekannter Apps“ erlauben). Die App findet den Rechner im WLAN selbst – antippen, oder
+- **Android**: die App direkt vom Rechner installieren – *Android-App fürs Tablet* im
+  Tapinion-Fenster (oder `/app`) zeigt einen QR-Code; mit dem Tablet scannen und *App herunterladen*
+  antippen. Alternativ `tapinion-android-….apk` aus den Releases. Einmalig „Installation
+  unbekannter Apps“ erlauben. Die App findet den Rechner im WLAN selbst – antippen, oder
   *QR-Code scannen* –, dann die PIN der Veranstaltung eingeben. Die App
   läuft im Vollbild, hält den Bildschirm an und heftet sich an, solange der Kiosk läuft. Sie ist die
   schlanke Ergänzung zum Programm auf dem Rechner: Jede in der App geöffnete Veranstaltung bleibt

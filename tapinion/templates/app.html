@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ t('app.title') }} · {{ brand.name or 'Tapinion' }}{% endblock %}
+{% block content %}
+<div class="app-download">
+  <section class="card">
+    <h1>{{ t('app.title') }}</h1>
+    {% if apk %}
+    <p class="lead">{{ t('app.intro') }}</p>
+    <p><a class="primary btn big" href="/app/tapinion.apk" download>{{ t('app.download', size=apk_mb) }}</a></p>
+    <ol class="howto">
+      <li>{{ t('app.step_download') }}</li>
+      <li>{{ t('app.step_unknown') }}</li>
+      <li>{{ t('app.step_connect') }}</li>
+    </ol>
+    {% else %}
+    <p class="lead">{{ t('app.missing') }}</p>
+    <p><a class="btn ghost" href="https://github.com/mw-research/tapinion/releases/latest" rel="noopener">{{ t('app.releases') }}</a></p>
+    {% endif %}
+  </section>
+  <section class="card app-qr">
+    <h2>{{ t('app.qr_title') }}</h2>
+    <p class="muted">{{ t('app.qr_intro') }}</p>
+    <div class="qr">{{ svg | safe }}</div>
+    <p class="qr-url"><code>{{ url }}</code></p>
+  </section>
+</div>
+{% endblock %}

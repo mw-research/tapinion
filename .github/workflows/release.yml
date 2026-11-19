@@ -1,6 +1,7 @@
 # Builds everything for a release tag (v1.2.3) and attaches it to the GitHub release:
 #   Windows installer (Tapinion-Setup-*.exe), macOS disk image (.dmg), Linux AppImage,
-#   Android APK and the Docker image on ghcr.io.
+#   Android APK and the Docker image on ghcr.io. The desktop installers also carry the APK,
+#   so tablets can download the app from the computer (/app).
 # "Run workflow" (manual) builds the same files as downloadable artifacts, without a release.
 #
 # Optional secrets for a release-signed APK (same key for every release, so updates install):
@@ -19,9 +20,15 @@ permissions:
 
 jobs:
   windows:
+    needs: android
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Android app for the download page (/app)
+        uses: actions/download-artifact@v4
+        with:
+          name: android
+          path: tapinion/apk
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -42,9 +49,15 @@ jobs:
           path: dist/Tapinion-Setup-*.exe
 
   macos:
+    needs: android
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Android app for the download page (/app)
+        uses: actions/download-artifact@v4
+        with:
+          name: android
+          path: tapinion/apk
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -70,9 +83,15 @@ jobs:
           path: dist/*.dmg
 
   linux:
+    needs: android
     runs-on: ubuntu-22.04   # older glibc: the AppImage runs on more distributions
     steps:
       - uses: actions/checkout@v4
+      - name: Android app for the download page (/app)
+        uses: actions/download-artifact@v4
+        with:
+          name: android
+          path: tapinion/apk
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

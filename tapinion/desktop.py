@@ -219,6 +219,7 @@ def _window(local, lan, folder, server):
                          "unter Veranstaltungen scannen. Adresse:") if de else
                         ("In the same Wi-Fi: the Android app finds this computer by itself, otherwise "
                          "scan the QR code under Events. Address:"),
+        "app": "Android-App fürs Tablet (QR-Code)" if de else "Android app for the tablet (QR code)",
         "nolan": "kein Netzwerk – nur auf diesem Rechner erreichbar" if de else
                  "no network – reachable on this computer only",
         "folder": "Datenordner" if de else "Data folder",
@@ -256,6 +257,7 @@ def _window(local, lan, folder, server):
     ttk.Label(frm, text=txt["tablets"], font=("TkDefaultFont", 10, "bold")).grid(row=6, column=0, sticky="w", pady=(16, 4))
     ttk.Label(frm, text=txt["tablets_hint"], wraplength=420, foreground=muted).grid(row=7, column=0, sticky="w")
     ttk.Label(frm, text=lan or txt["nolan"], font=("TkFixedFont", 11)).grid(row=8, column=0, sticky="w", pady=(2, 0))
+    ttk.Button(frm, text=txt["app"], command=lambda: webbrowser.open(local + "/app")).grid(row=9, column=0, sticky="w", pady=(8, 0))
 
     btns = ttk.Frame(frm)
     btns.grid(row=9, column=0, sticky="we", pady=(18, 0))

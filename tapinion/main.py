@@ -13,7 +13,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -1036,6 +1036,39 @@ async def user_delete(request: Request, user_id: int):
     with db.session() as conn:
         conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
     return HTMLResponse("")
+
+
+# --- Android app download ----------------------------------------------------
+# The desktop installers carry the Android app (tapinion/apk/*.apk), so tablets in the same
+# Wi-Fi install it straight from this computer: scan the QR code on /app, download, install.
+# TAPINION_APK points to another file (e.g. on a server).
+
+def apk_file() -> Path | None:
+    configured = os.environ.get("TAPINION_APK", "").strip()
+    if configured:
+        p = Path(configured)
+        return p if p.is_file() else None
+    found = sorted((Path(__file__).parent / "apk").glob("*.apk"))
+    return found[-1] if found else None
+
+
+@app.get("/app", response_class=HTMLResponse)
+def app_page(request: Request):
+    """Public: download the Android app; on the computer the QR code leads tablets here."""
+    apk = apk_file()
+    url = f"{netinfo.public_base(request)}/app"
+    return render(request, "app.html", apk=apk is not None,
+                  apk_mb=f"{apk.stat().st_size / 1_000_000:.0f}" if apk else "",
+                  url=url, svg=netinfo.qr_svg(url))
+
+
+@app.get("/app/tapinion.apk", include_in_schema=False)
+def app_apk():
+    apk = apk_file()
+    if apk is None:
+        raise HTTPException(404)
+    return FileResponse(apk, media_type="application/vnd.android.package-archive",
+                        filename="tapinion-android.apk")
 
 
 @app.get("/healthz", include_in_schema=False)

@@ -27,5 +27,7 @@ First public version.
   Full lock as device owner (set up once per tablet with adb): a running kiosk can only be left with the
   PIN – no home, recent apps, notifications, power menu or unpinning; it opens again after a restart.
 - Device sync API (`/api/kiosk/<token>`, `/pair`, `/votes`) and installation id in `/healthz`.
+- Android app download from the computer (`/app`, QR code in the desktop window): the desktop installers
+  carry the APK, so tablets in the same Wi-Fi install the app without the release page.
 - Kiosk on the base computer: full-screen browser window from the desktop app; full-screen button in the kiosk.
 - Docker image and Kubernetes manifest.

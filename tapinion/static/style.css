@@ -265,3 +265,12 @@ body.kiosk {
 .device-name { color: #5c6878; font-size: .9rem; width: 260px; margin-bottom: .4rem; }
 .device-name input { font-size: 1rem; text-align: center; }
 html.resuming .pinpad { visibility: hidden; }
+
+/* Android app download (/app) */
+.app-download { display: grid; gap: 1.2rem; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; max-width: 980px; margin: 0 auto; }
+.app-download .btn.big { font-size: 1.1rem; padding: .8rem 1.4rem; white-space: normal; text-align: center; }
+.app-download h1 { overflow-wrap: anywhere; }
+.app-download .howto { padding-left: 1.2rem; line-height: 1.55; }
+.app-qr { text-align: center; }
+.app-qr .qr svg { max-width: 220px; }
+@media (max-width: 760px) { .app-download { grid-template-columns: 1fr; } .app-qr { display: none; } }

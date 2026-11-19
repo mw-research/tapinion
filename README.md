@@ -45,8 +45,10 @@ unless you choose to delete it.
 
 **Tablets** (same Wi-Fi as the computer):
 
-- **Android**: install `tapinion-android-….apk` from the releases (allow "install unknown apps"
-  once). The app finds the computer in the Wi-Fi by itself – tap it, or tap *Scan QR code* –
+- **Android**: install the app straight from the computer – *Android app for the tablet* in the
+  Tapinion window (or `/app`) shows a QR code; scan it with the tablet and tap *Download the app*.
+  Alternatively `tapinion-android-….apk` from the releases. Allow "install unknown apps"
+  once. The app finds the computer in the Wi-Fi by itself – tap it, or tap *Scan QR code* –
   then enter the event's PIN. The app runs full screen, keeps the screen on
   and pins itself while the kiosk runs. It is the slim companion of the computer program: every event opened in the app is
   kept on the device (*Available offline*). Prepare a tablet in the office by scanning the QR code

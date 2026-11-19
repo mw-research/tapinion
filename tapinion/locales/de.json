@@ -290,5 +290,17 @@
   "dashboard.per_device": "Je Gerät",
   "dashboard.no_device": "ohne Gerät (ältere Bewertungen)",
   "kiosk.offline_badge": "offline – Bewertungen bleiben auf diesem Gerät",
-  "devices.offline_name": "{name} (offline)"
+  "devices.offline_name": "{name} (offline)",
+  "app.title": "Tapinion für Android",
+  "app.intro": "Die App für Tablets und Smartphones: Kiosk im Vollbild, findet diesen Rechner im WLAN selbst und läuft auch offline weiter.",
+  "app.download": "App herunterladen ({size} MB)",
+  "app.step_download": "Auf dem Tablet „App herunterladen“ antippen.",
+  "app.step_unknown": "Die geladene Datei öffnen und einmalig „Installation unbekannter Apps“ für den Browser erlauben.",
+  "app.step_connect": "Tapinion öffnen: Die App findet diesen Rechner im WLAN – antippen, Veranstaltung wählen, PIN eingeben.",
+  "app.missing": "In dieser Installation ist die Android-App nicht enthalten. Sie steht auf der Download-Seite bereit.",
+  "app.releases": "Zur Download-Seite",
+  "app.qr_title": "Mit dem Tablet öffnen",
+  "app.qr_intro": "Diesen Code mit der Kamera des Tablets scannen (gleiches WLAN), dann dort die App herunterladen.",
+  "app.link": "App direkt von diesem Rechner laden",
+  "app.no_app_yet": "Noch keine Tapinion-App auf dem Android-Tablet?"
 }

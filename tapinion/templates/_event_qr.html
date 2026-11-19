@@ -5,6 +5,7 @@
     <div class="qr">{{ svg | safe }}</div>
     <p class="qr-url"><code>{{ url }}</code></p>
     <p class="muted small">{{ t('events.qr_pin_hint') }}</p>
+    <p class="muted small">{{ t('app.no_app_yet') }} <a href="/app" target="_blank">{{ t('app.link') }}</a></p>
     <div class="form-actions">
       <button class="btn ghost" hx-on:click="navigator.clipboard && navigator.clipboard.writeText({{ url | tojson | forceescape }}); this.textContent = {{ t('events.copied') | tojson | forceescape }};">{{ t('events.copy_link') }}</button>
       <button class="primary" hx-on:click="this.closest('.modal-backdrop').remove()">{{ t('common.close') }}</button>
