@@ -54,6 +54,21 @@ unless you choose to delete it.
   shows the results collected on the device. Back in reach of the computer – also at a new
   address, found again in the Wi-Fi – the ratings are sent automatically (each exactly once).
   Events are created on the computer; in the app they can only be deleted.
+
+  **Full lock** (recommended for tablets in public): by default Android's screen pinning protects
+  the kiosk, which a visitor can undo (hold *back* and *overview*). With the full lock a running
+  kiosk can only be left with the PIN – no home button, no recent apps, no notifications, no power
+  menu, no unpinning, and after a restart the kiosk opens again by itself. Set up once per tablet,
+  free of charge: remove all accounts on the tablet (or reset it), enable USB debugging, connect it
+  to a computer with the [Android platform tools](https://developer.android.com/tools/releases/platform-tools)
+  and run
+
+  ```
+  adb shell dpm set-device-owner io.github.mwresearch.tapinion/.KioskAdmin
+  ```
+
+  The start screen of the app then shows *Full lock is on*. *Give tablet back* on that screen
+  switches it off again (the app can then be uninstalled normally).
 - **The computer itself**: *Kiosk on this computer* in the Tapinion window opens the rating screen
   full screen in its own browser window (Edge on Windows; Chrome or Edge on macOS/Linux), while you
   stay logged in in your normal browser.

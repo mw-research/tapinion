@@ -57,6 +57,22 @@ bleiben erhalten, außer Sie wählen das Löschen.
   auch unter neuer Adresse, die im WLAN neu gefunden wird – werden die Bewertungen automatisch
   übertragen (jede genau einmal). Veranstaltungen entstehen am Rechner; in der App lassen sie sich
   nur löschen.
+
+  **Vollsperre** (empfohlen für Tablets im öffentlichen Raum): Standardmäßig schützt die
+  Bildschirmfixierung von Android den Kiosk; ein Besucher kann sie lösen (*Zurück* und *Übersicht*
+  halten). Mit der Vollsperre lässt sich ein laufender Kiosk nur mit der PIN verlassen – keine
+  Home-Taste, kein App-Wechsel, keine Benachrichtigungen, kein Ein/Aus-Menü, kein Lösen der
+  Fixierung, und nach einem Neustart öffnet sich der Kiosk von selbst wieder. Einmal pro Tablet,
+  kostenlos: alle Konten auf dem Tablet entfernen (oder es zurücksetzen), USB-Debugging einschalten,
+  mit einem Rechner mit den [Android-Plattform-Tools](https://developer.android.com/tools/releases/platform-tools)
+  verbinden und ausführen:
+
+  ```
+  adb shell dpm set-device-owner io.github.mwresearch.tapinion/.KioskAdmin
+  ```
+
+  Der Startbildschirm der App zeigt dann *Vollsperre ist aktiv*. *Tablet freigeben* auf diesem
+  Bildschirm schaltet sie wieder ab (danach lässt sich die App normal deinstallieren).
 - **Der Rechner selbst**: *Kiosk auf diesem Rechner* im Tapinion-Fenster öffnet die Bewertung im
   Vollbild in einem eigenen Browserfenster (Edge unter Windows; Chrome oder Edge unter macOS/Linux);
   im normalen Browser bleiben Sie für die Auswertung angemeldet.

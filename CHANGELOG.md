@@ -24,6 +24,8 @@ First public version.
   Never waits on an unreachable computer: short connection check that can be cancelled, then the offline kiosk
   or the start screen; back leaves loading and PIN pages. A running kiosk is left with the PIN only, also when
   the connection drops or the app restarts (cancel then continues the kiosk offline).
+  Full lock as device owner (set up once per tablet with adb): a running kiosk can only be left with the
+  PIN – no home, recent apps, notifications, power menu or unpinning; it opens again after a restart.
 - Device sync API (`/api/kiosk/<token>`, `/pair`, `/votes`) and installation id in `/healthz`.
 - Kiosk on the base computer: full-screen browser window from the desktop app; full-screen button in the kiosk.
 - Docker image and Kubernetes manifest.

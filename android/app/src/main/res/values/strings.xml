@@ -39,4 +39,12 @@
     <string name="connecting_title">Connecting to Tapinion …</string>
     <string name="connecting_cancel">Cancel – to the overview</string>
     <string name="connecting_continue_offline">Cancel – continue offline</string>
+    <string name="lock_full_on">Full lock is on: a running kiosk can only be left with the PIN – no home button, no unpinning, it also returns after a restart.</string>
+    <string name="lock_full_off">Without full lock, Android pinning can be undone (hold back and overview) and the app left.</string>
+    <string name="lock_how">Set up full lock …</string>
+    <string name="lock_how_title">Full lock for this tablet</string>
+    <string name="lock_how_text">Once per tablet, free of charge: Tapinion becomes the device owner. Afterwards a running kiosk can only be left with the PIN.\n\n1. Remove all accounts on the tablet (Settings → Accounts) or reset it.\n2. Enable USB debugging (Settings → About → tap build number 7 times → Developer options).\n3. Connect it to a computer with Android platform tools and run:\n\n%1$s\n\nThe tablet can be given back at any time with “Give tablet back” on this screen.</string>
+    <string name="lock_release">Give tablet back</string>
+    <string name="lock_release_question">Switch off the full lock?</string>
+    <string name="lock_release_text">Tapinion stops being the device owner. Kiosks are then only protected by Android pinning, and the app can be uninstalled normally.</string>
 </resources>

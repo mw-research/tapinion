@@ -156,7 +156,8 @@ public class MainActivity extends AppCompatActivity {
      * Can be cancelled at any time.
      */
     private void showConnecting(String target) {
-        stopPinning();
+        if (prefs.getString(KEY_ACTIVE_KIOSK, null) != null) startPinning();  // a running kiosk stays locked
+        else stopPinning();
         stopDiscovery();
         main.removeCallbacks(pageWatchdog);
         mode = Mode.CONNECTING;
@@ -185,6 +186,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }, "tapinion-connect").start();
+    }
+
+    /** A kiosk is unlocked and running (also seen from the boot receiver). */
+    static boolean kioskActive(Context c) {
+        return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_ACTIVE_KIOSK, null) != null;
     }
 
     /** The token of a running kiosk that is stored on the device, else null. */
@@ -234,6 +240,7 @@ public class MainActivity extends AppCompatActivity {
     // --- start screen ---------------------------------------------------------
 
     private void showSetup(String error) {
+        prefs.edit().remove(KEY_ACTIVE_KIOSK).apply();  // the overview is only reached once no kiosk runs
         stopPinning();
         main.removeCallbacks(pageWatchdog);
         mode = Mode.SETUP;
@@ -261,6 +268,7 @@ public class MainActivity extends AppCompatActivity {
         SwitchMaterial pin = findViewById(R.id.pin_app);
         pin.setChecked(prefs.getBoolean(KEY_PIN_APP, true));
         pin.setOnCheckedChangeListener((b, checked) -> prefs.edit().putBoolean(KEY_PIN_APP, checked).apply());
+        renderLock(pin);
         TextView err = findViewById(R.id.error);
         if (error != null) {
             err.setText(error);
@@ -557,11 +565,16 @@ public class MainActivity extends AppCompatActivity {
                 pageFinished = true;
                 webFailures = 0;
                 main.removeCallbacks(pageWatchdog);
-                if (isStartPage(page)) {
-                    view.clearHistory();  // "back" must not lead into a kiosk that was left with the PIN
-                    prefs.edit().remove(KEY_LAST_KIOSK).remove(KEY_ACTIVE_KIOSK).apply();
-                } else if (isKioskPage(page)) {
+                if (isKioskPage(page)) {
                     prefs.edit().putString(KEY_LAST_KIOSK, page).apply();
+                } else {
+                    // A running kiosk only reaches other pages after the PIN (the server redirects
+                    // to the login page, or to the setup wizard on a fresh installation).
+                    if (isStartPage(page) || kioskActive(MainActivity.this)) {
+                        view.clearHistory();  // "back" must not lead into a kiosk that was left with the PIN
+                    }
+                    prefs.edit().remove(KEY_LAST_KIOSK).remove(KEY_ACTIVE_KIOSK).apply();
+                    stopPinning();
                 }
             }
 
@@ -669,6 +682,39 @@ public class MainActivity extends AppCompatActivity {
         v.loadUrl("file:///android_asset/offline/results.html#" + Uri.encode(token));
     }
 
+    /** Overview: full lock active (with a way to give the device back) or how to set it up. */
+    private void renderLock(SwitchMaterial pin) {
+        TextView status = findViewById(R.id.lock_status);
+        TextView action = findViewById(R.id.lock_action);
+        boolean owner = KioskLock.isOwner(this);
+        pin.setVisibility(owner ? View.GONE : View.VISIBLE);
+        status.setText(owner ? R.string.lock_full_on : R.string.lock_full_off);
+        action.setText(owner ? R.string.lock_release : R.string.lock_how);
+        action.setOnClickListener(v -> {
+            if (owner) {
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.lock_release_question)
+                        .setMessage(R.string.lock_release_text)
+                        .setPositiveButton(R.string.lock_release, (d, w) -> {
+                            try {
+                                KioskLock.release(this);
+                            } catch (Exception ignored) {
+                            }
+                            showSetup(null);
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
+            } else {
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.lock_how_title)
+                        .setMessage(getString(R.string.lock_how_text, "adb shell dpm set-device-owner "
+                                + getPackageName() + "/.KioskAdmin"))
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show();
+            }
+        });
+    }
+
     // --- kiosk pinning, back key, system bars --------------------------------------
 
     /** Pinning starts when the unlocked kiosk reports itself (kioskReady), never on the PIN page. */
@@ -677,8 +723,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startPinning() {
-        if (pinned || !prefs.getBoolean(KEY_PIN_APP, true)) return;
+        if (pinned) return;
+        boolean owner = KioskLock.isOwner(this);  // full lock: always on, cannot be switched off here
+        if (!owner && !prefs.getBoolean(KEY_PIN_APP, true)) return;
         try {
+            if (owner) KioskLock.engage(this);
             startLockTask();
             pinned = true;
         } catch (Exception ignored) {
@@ -687,9 +736,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void stopPinning() {
-        if (!pinned) return;
+        if (!pinned || prefs.getString(KEY_ACTIVE_KIOSK, null) != null) return;  // a running kiosk stays locked
         try {
             stopLockTask();
+        } catch (Exception ignored) {
+        }
+        try {
+            KioskLock.disengage(this);
         } catch (Exception ignored) {
         }
         pinned = false;

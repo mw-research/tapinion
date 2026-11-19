@@ -39,4 +39,12 @@
     <string name="connecting_title">Verbinde mit Tapinion …</string>
     <string name="connecting_cancel">Abbrechen – zur Übersicht</string>
     <string name="connecting_continue_offline">Abbrechen – offline weiter</string>
+    <string name="lock_full_on">Vollsperre ist aktiv: Ein laufender Kiosk lässt sich nur mit der PIN verlassen – keine Home-Taste, kein Lösen der Fixierung, auch nach einem Neustart.</string>
+    <string name="lock_full_off">Ohne Vollsperre lässt sich die Android-Fixierung lösen (Zurück und Übersicht halten) und die App verlassen.</string>
+    <string name="lock_how">Vollsperre einrichten …</string>
+    <string name="lock_how_title">Vollsperre für dieses Tablet</string>
+    <string name="lock_how_text">Einmal pro Tablet, kostenlos: Tapinion wird Geräteinhaber. Danach lässt sich ein laufender Kiosk nur noch mit der PIN verlassen.\n\n1. Alle Konten auf dem Tablet entfernen (Einstellungen → Konten) oder es zurücksetzen.\n2. USB-Debugging einschalten (Einstellungen → Über das Tablet → 7× auf Build-Nummer tippen → Entwickleroptionen).\n3. Mit einem Rechner mit Android-Plattform-Tools verbinden und ausführen:\n\n%1$s\n\nMit „Tablet freigeben“ auf diesem Bildschirm lässt sich das jederzeit rückgängig machen.</string>
+    <string name="lock_release">Tablet freigeben</string>
+    <string name="lock_release_question">Vollsperre ausschalten?</string>
+    <string name="lock_release_text">Tapinion ist dann nicht mehr Geräteinhaber. Kiosks sind nur noch durch die Android-Fixierung geschützt, und die App lässt sich normal deinstallieren.</string>
 </resources>
