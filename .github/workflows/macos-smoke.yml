@@ -64,6 +64,14 @@ jobs:
           osascript -e 'tell application "Safari" to get source of current tab of front window' 2>&1 | head -c 600 || true
           echo; echo "--- / via localhost (IPv6 first)"; curl -sv -m 5 -o /dev/null http://localhost:8765/ 2>&1 | grep -E "Trying|Connected|< HTTP|< location|refused" || true
           echo "--- / via 127.0.0.1"; curl -s -m 5 -o /dev/null -w "%{http_code} %{redirect_url}\n" http://127.0.0.1:8765/ || true
+          echo "--- connections to the server"; lsof -nP -iTCP:8765 || true
+          open -a Safari "http://127.0.0.1:8765/setup"; sleep 12; screencapture -x shots/safari-127-new-tab.png || true
+          open -a Safari "http://localhost:8765/login"; sleep 12; screencapture -x shots/safari-localhost-login.png || true
+          if [ -d "/Applications/Google Chrome.app" ]; then
+            open -a "Google Chrome" --args --no-first-run --no-default-browser-check "http://localhost:8765/"; sleep 12
+            screencapture -x shots/chrome-localhost.png || true
+          fi
+          echo "--- connections afterwards"; lsof -nP -iTCP:8765 || true
           osascript -e 'tell application "Tapinion" to activate' || true
           sleep 2; screencapture -x shots/tapinion-activated.png || true
       - name: Log file
