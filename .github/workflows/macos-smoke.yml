@@ -1,0 +1,81 @@
+# Installs the macOS disk image like a user would (copy Tapinion.app to Applications, open it)
+# and records what appears: screenshots, the server's answer and the log file.
+name: macOS smoke test
+
+on:
+  push:
+    branches: [main, "ios-*", "macos-*"]
+    paths:
+      - "tapinion/desktop.py"
+      - "packaging/pyinstaller/**"
+      - ".github/workflows/macos-smoke.yml"
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # "build": this commit; a run id: the disk image of that Release run (what users have)
+        source: [build, "44488688453"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - if: matrix.source == 'build'
+        run: pip install . pyinstaller
+      - if: matrix.source == 'build'
+        run: python -c "import tkinter; print('Tk', tkinter.TkVersion, tkinter.Tcl().eval('info patchlevel'))"
+      - if: matrix.source == 'build'
+        run: pyinstaller --noconfirm --distpath dist --workpath build packaging/pyinstaller/tapinion.spec
+      - name: Disk image
+        if: matrix.source == 'build'
+        run: |
+          mkdir dmg && cp -R dist/Tapinion.app dmg/ && ln -s /Applications dmg/Applications
+          hdiutil create -volname Tapinion -srcfolder dmg -ov -format UDZO dist/Tapinion-test.dmg
+      - name: Disk image of an earlier Release run
+        if: matrix.source != 'build'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download ${{ matrix.source }} -R ${{ github.repository }} -n macos -D old
+          mkdir -p dist && cp old/*.dmg dist/Tapinion-test.dmg
+      - name: Install like a user
+        run: |
+          hdiutil attach dist/Tapinion-test.dmg -mountpoint /Volumes/Tapinion -nobrowse
+          cp -R /Volumes/Tapinion/Tapinion.app /Applications/
+          hdiutil detach /Volumes/Tapinion
+          sw_vers; defaults read -g AppleInterfaceStyle 2>/dev/null || echo "light mode"
+      - name: Open the app (double-click)
+        run: |
+          mkdir -p shots
+          open /Applications/Tapinion.app
+          for t in 5 15 30; do
+            sleep $(( t == 5 ? 5 : t == 15 ? 10 : 15 ))
+            screencapture -x "shots/open-${t}s.png" || true
+            echo "--- after ${t}s: healthz"; curl -s -m 3 http://127.0.0.1:8765/healthz || echo "no answer"
+          done
+          ps axo pid,etime,command | grep -i "[T]apinion" || true
+          osascript -e 'tell application "System Events" to get name of every window of every process whose background only is false' || true
+      - name: Log file
+        if: always()
+        run: |
+          cp "$HOME/Library/Application Support/Tapinion/tapinion.log" shots/ 2>/dev/null || echo "no log file"
+          cat shots/tapinion.log 2>/dev/null || true
+      - name: Start from the terminal (stderr visible)
+        if: always()
+        run: |
+          pkill -f "Tapinion.app/Contents/MacOS" || true; sleep 3
+          /Applications/Tapinion.app/Contents/MacOS/Tapinion > shots/terminal.log 2>&1 &
+          sleep 20
+          screencapture -x shots/terminal-20s.png || true
+          curl -s -m 3 http://127.0.0.1:8765/healthz || echo "no answer"
+          cat shots/terminal.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-smoke-${{ matrix.source }}
+          path: shots

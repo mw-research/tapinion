@@ -260,7 +260,7 @@ def _window(local, lan, folder, server):
     ttk.Button(frm, text=txt["app"], command=lambda: webbrowser.open(local + "/app")).grid(row=9, column=0, sticky="w", pady=(8, 0))
 
     btns = ttk.Frame(frm)
-    btns.grid(row=9, column=0, sticky="we", pady=(18, 0))
+    btns.grid(row=10, column=0, sticky="we", pady=(18, 0))
     btns.columnconfigure(0, weight=1)
     ttk.Button(btns, text=txt["folder"], command=lambda: _open_folder(folder)).grid(row=0, column=0, sticky="w")
     ttk.Button(btns, text=txt["quit"], command=root.destroy).grid(row=0, column=1, sticky="e")
