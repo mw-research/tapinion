@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         # "build": this commit; a run id: the disk image of that Release run (what users have)
-        source: [build, "44488688453"]
+        source: [build]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -59,7 +59,14 @@ jobs:
             echo "--- after ${t}s: healthz"; curl -s -m 3 http://127.0.0.1:8765/healthz || echo "no answer"
           done
           ps axo pid,etime,command | grep -i "[T]apinion" || true
-          osascript -e 'tell application "System Events" to get name of every window of every process whose background only is false' || true
+          echo "--- windows of Tapinion"; osascript -e 'tell application "System Events" to get {name, position, size} of every window of process "Tapinion"' || true
+          echo "--- Safari"; osascript -e 'tell application "Safari" to get URL of current tab of front window' || true
+          osascript -e 'tell application "Safari" to get source of current tab of front window' 2>&1 | head -c 600 || true
+          echo; echo "--- / via localhost (IPv6 first)"; curl -sv -m 5 -o /dev/null http://localhost:8765/ 2>&1 | grep -E "Trying|Connected|< HTTP|< location|refused" || true
+          echo "--- / via 127.0.0.1"; curl -s -m 5 -o /dev/null -w "%{http_code} %{redirect_url}
+" http://127.0.0.1:8765/ || true
+          osascript -e 'tell application "Tapinion" to activate' || true
+          sleep 2; screencapture -x shots/tapinion-activated.png || true
       - name: Log file
         if: always()
         run: |
