@@ -1,0 +1,72 @@
+# Xcode project for Tapinion on iPad and iPhone, generated with XcodeGen:
+#   brew install xcodegen && cd ios && xcodegen
+# The offline pages and the logo are shared with the Android app.
+name: Tapinion
+options:
+  bundleIdPrefix: io.github.mwresearch
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: en
+settings:
+  base:
+    MARKETING_VERSION: "1.2.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+targets:
+  Tapinion:
+    type: application
+    platform: iOS
+    sources:
+      - path: Tapinion
+      - path: ../android/app/src/main/assets/offline
+        type: folder
+        buildPhase: resources
+      - path: ../android/app/src/main/res/drawable-nodpi/logo_mark.png
+        buildPhase: resources
+    info:
+      path: Tapinion/Info.plist
+      properties:
+        CFBundleDisplayName: Tapinion
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleLocalizations: [en, de]
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UIStatusBarHidden: false
+        UISupportedInterfaceOrientations:
+          [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad:
+          [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown,
+           UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        NSCameraUsageDescription: Tapinion scans the QR code of an event.
+        NSLocalNetworkUsageDescription: Tapinion finds the computer running Tapinion in this Wi-Fi.
+        NSBonjourServices: [_tapinion._tcp]
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true   # Tapinion runs on computers in the local network (plain http)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.mwresearch.tapinion
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_STYLE: Automatic
+  TapinionUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [TapinionUITests]
+    dependencies:
+      - target: Tapinion
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Tapinion
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.mwresearch.tapinion.uitests
+schemes:
+  Tapinion:
+    build:
+      targets:
+        Tapinion: all
+        TapinionUITests: [test]
+    test:
+      targets: [TapinionUITests]

@@ -16,3 +16,8 @@ android/local.properties
 *.keystore
 *.jks
 tapinion/apk/
+ios/Tapinion.xcodeproj/
+ios/Tapinion/Info.plist
+ios/build/
+ios/build-device/
+ios/Payload/

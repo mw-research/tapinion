@@ -1,0 +1,116 @@
+# iPad/iPhone app: builds it, runs the kiosk round trip in the simulator against a real Tapinion
+# (online, offline, sync back) and builds an unsigned .ipa for sideloading (signed on the
+# user's side, e.g. with a free Apple ID – see ios/README.md).
+name: iOS
+
+on:
+  push:
+    branches: [main, "ios-*"]
+    paths:
+      - "ios/**"
+      - "android/app/src/main/assets/offline/**"
+      - "tapinion/static/kiosk.js"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install .
+      - run: brew install xcodegen
+      - name: Xcode project
+        working-directory: ios
+        run: xcodegen
+      - name: Simulator (an iPad)
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin)["devices"]
+          runtimes = sorted((r for r in d if "iOS" in r), key=lambda r: [int(x) for x in r.split("iOS-")[1].split("-")])
+          for r in reversed(runtimes):
+              pads = [x for x in d[r] if x["name"].startswith("iPad")]
+              if pads:
+                  print(pads[0]["udid"]); break')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl list devices | grep "$UDID"
+      - name: Build for testing
+        working-directory: ios
+        run: |
+          xcodebuild -project Tapinion.xcodeproj -scheme Tapinion -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build build-for-testing | tail -n 40
+          test "${PIPESTATUS[0]}" -eq 0
+      - name: "A: kiosk with Tapinion running"
+        working-directory: ios
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/shots"
+          python ci/test_server.py "$RUNNER_TEMP/url.txt" > "$RUNNER_TEMP/server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/server.pid"
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8752/healthz && break; sleep 1; done
+          TEST_RUNNER_TAPINION_URL=$(cat "$RUNNER_TEMP/url.txt") TEST_RUNNER_SCREENSHOT_DIR="$GITHUB_WORKSPACE/shots" \
+          xcodebuild test-without-building -project Tapinion.xcodeproj -scheme Tapinion \
+            -destination "id=${{ steps.sim.outputs.udid }}" -derivedDataPath build \
+            -only-testing:TapinionUITests/KioskFlowTests/testA_Online -resultBundlePath "$GITHUB_WORKSPACE/results/A.xcresult"
+      - name: "B: Tapinion stopped – offline kiosk"
+        working-directory: ios
+        run: |
+          kill "$(cat "$RUNNER_TEMP/server.pid")"; sleep 2
+          ! curl -sf http://127.0.0.1:8752/healthz
+          TEST_RUNNER_SCREENSHOT_DIR="$GITHUB_WORKSPACE/shots" \
+          xcodebuild test-without-building -project Tapinion.xcodeproj -scheme Tapinion \
+            -destination "id=${{ steps.sim.outputs.udid }}" -derivedDataPath build \
+            -only-testing:TapinionUITests/KioskFlowTests/testB_Offline -resultBundlePath "$GITHUB_WORKSPACE/results/B.xcresult"
+      - name: "C: Tapinion back – sync"
+        working-directory: ios
+        run: |
+          python ci/test_server.py "$RUNNER_TEMP/url.txt" >> "$RUNNER_TEMP/server.log" 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8752/healthz && break; sleep 1; done
+          TEST_RUNNER_SCREENSHOT_DIR="$GITHUB_WORKSPACE/shots" \
+          xcodebuild test-without-building -project Tapinion.xcodeproj -scheme Tapinion \
+            -destination "id=${{ steps.sim.outputs.udid }}" -derivedDataPath build \
+            -only-testing:TapinionUITests/KioskFlowTests/testC_Sync -resultBundlePath "$GITHUB_WORKSPACE/results/C.xcresult"
+      - name: Screenshots from the test results
+        if: always()
+        run: |
+          mkdir -p shots
+          for r in results/*.xcresult; do
+            xcrun xcresulttool export attachments --path "$r" --output-path "shots/$(basename "$r" .xcresult)" || true
+          done
+          cp "$RUNNER_TEMP/server.log" shots/ || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-test-screenshots
+          path: shots
+
+  ipa:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - name: Xcode project
+        working-directory: ios
+        run: xcodegen
+      - id: v
+        run: echo "version=$( [[ "$GITHUB_REF" == refs/tags/v* ]] && echo "${GITHUB_REF_NAME#v}" || echo "0.0.0-dev" )" >> "$GITHUB_OUTPUT"
+      - name: Unsigned .ipa for sideloading
+        working-directory: ios
+        run: |
+          xcodebuild -project Tapinion.xcodeproj -scheme Tapinion -configuration Release -sdk iphoneos \
+            -derivedDataPath build-device build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" | tail -n 20
+          test "${PIPESTATUS[0]}" -eq 0
+          mkdir -p Payload ../dist
+          cp -R build-device/Build/Products/Release-iphoneos/Tapinion.app Payload/
+          zip -qry "../dist/tapinion-ios-${{ steps.v.outputs.version }}-unsigned.ipa" Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: dist/*.ipa
