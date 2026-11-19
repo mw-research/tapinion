@@ -14,7 +14,7 @@ on:
 jobs:
   smoke:
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -49,6 +49,14 @@ jobs:
           cp -R /Volumes/Tapinion/Tapinion.app /Applications/
           hdiutil detach /Volumes/Tapinion
           sw_vers; defaults read -g AppleInterfaceStyle 2>/dev/null || echo "light mode"
+      - name: "Control: does Safari paint pages on this machine?"
+        run: |
+          mkdir -p shots
+          printf '<html><body style="background:#fff"><h1 style="color:red;font-size:80px">CONTROL PAGE</h1></body></html>' > /tmp/control.html
+          python3 -m http.server 8790 --directory /tmp > /dev/null 2>&1 &
+          sleep 2
+          open -a Safari "http://127.0.0.1:8790/control.html"; sleep 10; screencapture -x shots/control-safari.png || true
+          osascript -e 'quit app "Safari"' || pkill -x Safari || true; sleep 3
       - name: Open the app (double-click)
         run: |
           mkdir -p shots
@@ -66,7 +74,6 @@ jobs:
           echo "--- / via 127.0.0.1"; curl -s -m 5 -o /dev/null -w "%{http_code} %{redirect_url}\n" http://127.0.0.1:8765/ || true
           echo "--- connections to the server"; lsof -nP -iTCP:8765 || true
           open -a Safari "http://127.0.0.1:8765/setup"; sleep 12; screencapture -x shots/safari-127-new-tab.png || true
-          open -a Safari "http://localhost:8765/login"; sleep 12; screencapture -x shots/safari-localhost-login.png || true
           if [ -d "/Applications/Google Chrome.app" ]; then
             open -a "Google Chrome" --args --no-first-run --no-default-browser-check "http://localhost:8765/"; sleep 12
             screencapture -x shots/chrome-localhost.png || true

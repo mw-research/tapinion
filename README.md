@@ -74,9 +74,10 @@ unless you choose to delete it.
 - **The computer itself**: *Kiosk on this computer* in the Tapinion window opens the rating screen
   full screen in its own browser window (Edge on Windows; Chrome or Edge on macOS/Linux), while you
   stay logged in in your normal browser.
-- **iPad / iPhone** (no app needed; an App Store app would require Apple's paid developer program):
-  scan the QR code with the camera, enter the PIN, then *Share → Add to Home
-  Screen*. For a locked-down kiosk: *Settings → Accessibility → Guided Access*.
+- **iPad / iPhone** in the browser: scan the QR code with the camera, enter the PIN, then *Share → Add to
+  Home Screen*. For a locked-down kiosk: *Settings → Accessibility → Guided Access*.
+- **iPad / iPhone app** (offline mode like the Android app): not in the App Store; the unsigned `.ipa`
+  is signed and installed with an Apple ID, see [ios/README.md](ios/README.md).
 
 Data lives in the user's application folder (`%APPDATA%\Tapinion`, `~/Library/Application Support/Tapinion`,
 `~/.local/share/tapinion`): one SQLite file, easy to back up.

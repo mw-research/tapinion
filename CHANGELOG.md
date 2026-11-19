@@ -29,5 +29,10 @@ First public version.
 - Device sync API (`/api/kiosk/<token>`, `/pair`, `/votes`) and installation id in `/healthz`.
 - Android app download from the computer (`/app`, QR code in the desktop window): the desktop installers
   carry the APK, so tablets in the same Wi-Fi install the app without the release page.
+- iPad/iPhone app (`ios/`, Swift): same behaviour as the Android app – finds Tapinion in the Wi-Fi, QR code,
+  offline kiosk and sync, PIN-only exit, back into a running kiosk after a restart; locking with Guided Access.
+  CI runs the kiosk round trip in the iPad simulator and builds an unsigned `.ipa` for sideloading.
+- macOS: the desktop window comes to the front after the start; the network announcement works with long
+  computer names (it failed, so tablets did not find the Mac by themselves).
 - Kiosk on the base computer: full-screen browser window from the desktop app; full-screen button in the kiosk.
 - Docker image and Kubernetes manifest.

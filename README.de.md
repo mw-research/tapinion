@@ -78,9 +78,10 @@ bleiben erhalten, außer Sie wählen das Löschen.
 - **Der Rechner selbst**: *Kiosk auf diesem Rechner* im Tapinion-Fenster öffnet die Bewertung im
   Vollbild in einem eigenen Browserfenster (Edge unter Windows; Chrome oder Edge unter macOS/Linux);
   im normalen Browser bleiben Sie für die Auswertung angemeldet.
-- **iPad / iPhone** (keine App nötig; eine App-Store-App setzt Apples kostenpflichtiges
-  Entwicklerprogramm voraus): QR-Code mit der Kamera scannen, PIN eingeben, dann *Teilen → Zum
+- **iPad / iPhone** im Browser: QR-Code mit der Kamera scannen, PIN eingeben, dann *Teilen → Zum
   Home-Bildschirm*. Für einen abgesicherten Kiosk: *Einstellungen → Bedienungshilfen → Geführter Zugriff*.
+- **iPad-/iPhone-App** (Offline-Modus wie die Android-App): nicht im App Store; die unsignierte `.ipa`
+  wird mit einer Apple-ID signiert und installiert, siehe [ios/README.md](ios/README.md).
 
 Die Daten liegen im Anwendungsordner des Benutzers (`%APPDATA%\Tapinion`,
 `~/Library/Application Support/Tapinion`, `~/.local/share/tapinion`): eine SQLite-Datei, leicht zu sichern.
