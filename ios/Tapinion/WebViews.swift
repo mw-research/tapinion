@@ -15,6 +15,7 @@ private final class MessageProxy: NSObject, WKScriptMessageHandler {
     }
 }
 
+@MainActor
 private func makeWebView(_ model: AppModel, scripts: [String]) -> WKWebView {
     let config = WKWebViewConfiguration()
     config.websiteDataStore = .default()  // vote queue and device key of the web kiosk

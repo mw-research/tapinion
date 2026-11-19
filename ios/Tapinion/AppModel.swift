@@ -223,7 +223,7 @@ final class AppModel: ObservableObject {
             let r = await store.syncAll()
             syncing = false
             if case .offlineKiosk(let token, _) = mode {  // the footer of a running offline kiosk shows what still waits
-                webView?.evaluateJavaScript("window.__tapinionSetVotes && window.__tapinionSetVotes(\(store.votesJson(token)))")
+                webView?.evaluateJavaScript("window.__tapinionSetVotes && window.__tapinionSetVotes(\(store.votesJson(token)))", completionHandler: nil)
             }
             guard mode == .setup else { return }
             renderOffline()
