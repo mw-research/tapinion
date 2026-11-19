@@ -272,6 +272,18 @@ def _window(local, lan, folder, server):
             root.after(500, watch)
 
     root.after(500, watch)
+
+    def to_front():
+        # The browser opens at the same time and would cover the window (macOS in particular).
+        root.lift()
+        root.attributes("-topmost", True)
+        root.after(1500, lambda: root.attributes("-topmost", False))
+        try:
+            root.focus_force()
+        except tk.TclError:
+            pass
+
+    root.after(1200, to_front)
     root.mainloop()
 
 
